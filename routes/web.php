@@ -26,4 +26,8 @@ Route::get('/enrollments/pdf', [EnrollmentController::class, 'pdf'])->name('enro
 Route::get('/enrollments/excel', [EnrollmentController::class, 'excel'])->name('enrollments.excel')->middleware('auth');
 Route::get('/attendances/{period}/pdf', [AttendanceReportController::class, 'pdf'])->name('attendances.report.pdf')->middleware('auth');
 Route::get('/attendances/{period}/excel', [AttendanceReportController::class, 'excel'])->name('attendances.report.excel')->middleware('auth');
+Route::get('/attendances/range/pdf', [AttendanceReportController::class, 'pdfByDate'])->name('attendances.report.range.pdf')->middleware('auth');
+Route::get('/attendances/range/excel', [AttendanceReportController::class, 'excelByDate'])->name('attendances.report.range.excel')->middleware('auth');
+Route::get('/attendances/selected/pdf', [AttendanceReportController::class, 'pdfByIds'])->name('attendances.report.selected.pdf')->middleware('auth');
+Route::get('/attendances/selected/excel', [AttendanceReportController::class, 'excelByIds'])->name('attendances.report.selected.excel')->middleware('auth');
 Route::get('/report-templates/{reportTemplate}/download', [ReportTemplateController::class, 'download'])->name('report-templates.download')->middleware('auth');

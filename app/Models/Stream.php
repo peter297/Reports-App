@@ -10,9 +10,10 @@ class Stream extends Model
 {
     use HasFactory;
 
-    protected $fillable =[
+    protected $fillable = [
         'class_id',
         'name',
+        'section',
     ];
 
     public function class(): BelongsTo

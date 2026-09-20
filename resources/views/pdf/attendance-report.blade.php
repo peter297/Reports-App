@@ -10,10 +10,11 @@
         h1 { text-align: center; margin: 0 0 4px 0; color: #1f2937; font-size: 16px; }
         .subtitle { text-align: center; color: #6b7280; font-size: 11px; margin: 0 0 16px 0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #9ca3af; padding: 6px 8px; }
-        th { background: #1f2937; color: #fff; font-weight: bold; font-size: 10px; }
-        td { font-size: 10px; }
+        th, td { border: 1px solid #9ca3af; padding: 5px 6px; }
+        th { background: #1f2937; color: #fff; font-weight: bold; font-size: 9px; }
+        td { font-size: 9px; }
         .text-right { text-align: right; }
+        .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
         .success { color: #059669; }
         .danger { color: #dc2626; }
@@ -32,6 +33,8 @@
                 <th>Period</th>
                 <th>Branch</th>
                 <th>Section</th>
+                <th>Class</th>
+                <th>Stream</th>
                 <th class="text-right">Records</th>
                 <th class="text-right">Total Learners</th>
                 <th class="text-right">Total Present</th>
@@ -56,6 +59,8 @@
                     <td>{{ $row['period_label'] }}</td>
                     <td>{{ $row['branch'] }}</td>
                     <td>{{ $row['section'] }}</td>
+                    <td>{{ $row['class_name'] }}</td>
+                    <td>{{ $row['stream_name'] }}</td>
                     <td class="text-right">{{ $row['record_count'] }}</td>
                     <td class="text-right font-bold">{{ $row['class_total'] }}</td>
                     <td class="text-right success">{{ $row['total_present'] }}</td>
@@ -64,7 +69,7 @@
                     <td class="text-right danger font-bold">{{ number_format($row['percentage_absent'], 2) }}%</td>
                 </tr>
             @empty
-                <tr><td colspan="9" style="text-align: center; color: #6b7280; font-style: italic;">No attendance records found.</td></tr>
+                <tr><td colspan="11" style="text-align: center; color: #6b7280; font-style: italic;">No attendance records found.</td></tr>
             @endforelse
         </tbody>
         @if (count($rows) > 1)
@@ -73,7 +78,7 @@
             @endphp
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="3" class="font-bold">GRAND TOTAL</td>
+                    <td colspan="5" class="font-bold">GRAND TOTAL</td>
                     <td class="text-right font-bold">{{ count($rows) }}</td>
                     <td class="text-right font-bold">{{ $grandTotalLearners }}</td>
                     <td class="text-right success font-bold">{{ $grandTotalPresent }}</td>

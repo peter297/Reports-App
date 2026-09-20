@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\SectionCoordinatorAssignmentResource\Pages;
-use App\Filament\Resources\SectionCoordinatorAssignmentResource\RelationManagers;
 use App\Models\SectionCoordinatorAssignment;
 use App\Models\User;
 use Filament\Forms;
@@ -11,8 +10,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SectionCoordinatorAssignmentResource extends Resource
 {
@@ -50,7 +47,7 @@ class SectionCoordinatorAssignmentResource extends Resource
                     ->required(),
                 Forms\Components\Select::make('section')
                     ->options([
-                        'Early Years - EYE' => 'Early Years - EYE',
+                        'EYE' => 'EYE - Early Years Education',
                         'Upper Primary' => 'Upper Primary',
                         'Junior School' => 'Junior School',
                     ])

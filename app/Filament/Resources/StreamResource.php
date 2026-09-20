@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StreamResource\Pages;
-use App\Filament\Resources\StreamResource\RelationManagers;
 use App\Models\Stream;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class StreamResource extends Resource
 {
@@ -19,7 +16,7 @@ class StreamResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup= 'System Settings';
+    protected static ?string $navigationGroup = 'System Settings';
 
     public static function getNavigationBadge(): ?string
     {
@@ -38,6 +35,14 @@ class StreamResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('section')
+                    ->options([
+                        'EYE' => 'EYE - Early Years Education',
+                        'Upper Primary' => 'Upper Primary',
+                        'Junior School' => 'Junior School',
+                    ])
+                    ->required()
+                    ->searchable(),
             ]);
     }
 
@@ -50,6 +55,14 @@ class StreamResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->badge()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('section')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'EYE' => 'info',
+                        'Upper Primary' => 'success',
+                        'Junior School' => 'warning',
+                    })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
