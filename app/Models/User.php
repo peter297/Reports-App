@@ -3,22 +3,21 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Helpers\Utils;
+use BezhanSalleh\FilamentShield\Facades\FilamentShield;
+use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
-use BezhanSalleh\FilamentShield\Facades\FilamentShield;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
-use App\Helpers\Utils;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, Notifiable, HasRoles, HasPanelShield;
+    use HasFactory, HasPanelShield, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -133,37 +132,38 @@ class User extends Authenticatable implements FilamentUser
             });
         }
     }
-    
-
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if($panel->getId() == 'admin'){
-            return $this->hasRole(Utils::getSuperAdminName()) || $this->hasRole(config
-            ('filament-shield.app_user.name')) || $this->hasRole(config
-            ('filament-shield.staff_user.name')) || $this->hasRole(config
-            ('filament-shield.teacher_user.name'));
-        }
-        elseif($panel->getId() == 'app'){
-            return $this->hasRole(Utils::getSuperAdminName()) || $this->hasRole(config('filament-shield.app_user.name'));
-        }
-        elseif($panel->getId() == 'staff'){
-            return $this->hasRole(Utils::getSuperAdminName()) || $this->hasRole(config('filament-shield.staff_user.name'));           
-        }
-        elseif($panel->getId() == 'teacher'){
-            return $this->hasRole(Utils::getSuperAdminName()) || $this->hasRole(config('filament-shield.teacher_user.name'));           
+        if ($panel->getId() === 'admin') {
+            // Allow access if user is super admin, has shield roles, or has ANY role assigned
+            return $this->hasRole(Utils::getSuperAdminName())
+                || $this->hasRole(config('filament-shield.app_user.name', 'app_user'))
+                || $this->hasRole(config('filament-shield.staff_user.name', 'staff_user'))
+                || $this->hasRole(config('filament-shield.teacher_user.name', 'teacher_user'))
+                || $this->roles()->exists(); // <-- Ensures any assigned role grants access
         }
 
-        else{
-            return false;
+        if ($panel->getId() === 'app') {
+            return $this->hasRole(Utils::getSuperAdminName())
+                || $this->hasRole(config('filament-shield.app_user.name', 'app_user'));
         }
-            
+
+        if ($panel->getId() === 'staff') {
+            return $this->hasRole(Utils::getSuperAdminName())
+                || $this->hasRole(config('filament-shield.staff_user.name', 'staff_user'));
+        }
+
+        if ($panel->getId() === 'teacher') {
+            return $this->hasRole(Utils::getSuperAdminName())
+                || $this->hasRole(config('filament-shield.teacher_user.name', 'teacher_user'));
+        }
+
+        return false;
     }
 
     public function scopeExcludeCurrentUser($query, $currentUserId)
     {
         return $query->where('id', '!=', $currentUserId);
     }
-
-
 }

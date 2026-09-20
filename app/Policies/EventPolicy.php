@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\Teacher;
+use App\Models\Event;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class TeacherPolicy
+class EventPolicy
 {
     use HandlesAuthorization;
 
@@ -15,15 +15,15 @@ class TeacherPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_teacher');
+        return $user->can('view_any_event');
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Teacher $teacher): bool
+    public function view(User $user, Event $event): bool
     {
-        return $user->can('view_teacher');
+        return $user->can('view_event');
     }
 
     /**
@@ -31,23 +31,23 @@ class TeacherPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_teacher');
+        return $user->can('create_event');
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Teacher $teacher): bool
+    public function update(User $user, Event $event): bool
     {
-        return $user->can('update_teacher');
+        return $user->can('update_event');
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Teacher $teacher): bool
+    public function delete(User $user, Event $event): bool
     {
-        return $user->can('delete_teacher');
+        return $user->can('delete_event');
     }
 
     /**
@@ -55,15 +55,15 @@ class TeacherPolicy
      */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_teacher');
+        return $user->can('delete_any_event');
     }
 
     /**
      * Determine whether the user can permanently delete.
      */
-    public function forceDelete(User $user, Teacher $teacher): bool
+    public function forceDelete(User $user, Event $event): bool
     {
-        return $user->can('force_delete_teacher');
+        return $user->can('force_delete_event');
     }
 
     /**
@@ -71,15 +71,15 @@ class TeacherPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_teacher');
+        return $user->can('force_delete_any_event');
     }
 
     /**
      * Determine whether the user can restore.
      */
-    public function restore(User $user, Teacher $teacher): bool
+    public function restore(User $user, Event $event): bool
     {
-        return $user->can('restore_teacher');
+        return $user->can('restore_event');
     }
 
     /**
@@ -87,15 +87,15 @@ class TeacherPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_teacher');
+        return $user->can('restore_any_event');
     }
 
     /**
      * Determine whether the user can replicate.
      */
-    public function replicate(User $user, Teacher $teacher): bool
+    public function replicate(User $user, Event $event): bool
     {
-        return $user->can('replicate_teacher');
+        return $user->can('replicate_event');
     }
 
     /**
@@ -103,6 +103,6 @@ class TeacherPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_teacher');
+        return $user->can('reorder_event');
     }
 }

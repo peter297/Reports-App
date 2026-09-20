@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Attendance;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class AttendancePolicy
@@ -15,8 +15,7 @@ class AttendancePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasUnrestrictedAccess()
-            || ($user->hasRole('Coordinators') && $user->sectionCoordinatorAssignments()->exists());
+        return $user->can('view_any_attendance');
     }
 
     /**
@@ -24,8 +23,7 @@ class AttendancePolicy
      */
     public function view(User $user, Attendance $attendance): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->hasRole('Coordinators'))
-            && $user->canManageAttendance($attendance->branch, $attendance->section);
+        return $user->can('view_attendance');
     }
 
     /**
@@ -33,7 +31,7 @@ class AttendancePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasUnrestrictedAccess() || $user->hasRole('Coordinators');
+        return $user->can('create_attendance');
     }
 
     /**
@@ -41,8 +39,7 @@ class AttendancePolicy
      */
     public function update(User $user, Attendance $attendance): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->hasRole('Coordinators'))
-            && $user->canManageAttendance($attendance->branch, $attendance->section);
+        return $user->can('update_attendance');
     }
 
     /**
@@ -50,8 +47,7 @@ class AttendancePolicy
      */
     public function delete(User $user, Attendance $attendance): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->hasRole('Coordinators'))
-            && $user->canManageAttendance($attendance->branch, $attendance->section);
+        return $user->can('delete_attendance');
     }
 
     /**

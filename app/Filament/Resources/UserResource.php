@@ -3,17 +3,15 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
+
+// use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -59,18 +57,16 @@ class UserResource extends Resource
 
                 Forms\Components\TextInput::make('password')
                     ->password()
-                    ->dehydrateStateUsing(fn($state) => Hash::make($state))
-                    ->dehydrated(fn($state) => filled($state))
-                    ->required(fn(string $context): bool => $context === 'create'),
-
+                    ->dehydrated(fn ($state) => filled($state))
+                    ->required(fn (string $context): bool => $context === 'create'),
 
                 Forms\Components\Select::make('roles')
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->preload()
                     ->searchable()
-                    ->visible(fn(): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
-                    ->dehydrated(fn(): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
+                    ->visible(fn (): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
+                    ->dehydrated(fn (): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
                     ->live()
                     ->options(function (Forms\Get $get): array {
                         $rolesByBranch = [

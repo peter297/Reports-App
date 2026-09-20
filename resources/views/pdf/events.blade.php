@@ -1,36 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Calendar of Events</title>
+    <meta charset="utf-8">
+    <title>Alameen Academy - Calendar of Events</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            table-layout: auto;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 10px;
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
-            background-color: #f2f2f2;
-            white-space: nowrap;
-        }
-        td {
-            word-wrap: break-word;
-        }
-        .page-break {
-            page-break-before: always; /* Forces a new page */
-        }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #222; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { width: 100px; height: auto; margin-bottom: 8px; }
+        h1 { text-align: center; margin: 0 0 4px 0; color: #1f2937; font-size: 16px; }
+        h2 { text-align: center; color: #374151; font-size: 13px; margin: 0 0 16px 0; }
+        h3 { color: #1f2937; font-size: 12px; margin: 20px 0 8px 0; border-bottom: 2px solid #1f2937; padding-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th, td { border: 1px solid #9ca3af; padding: 6px 8px; }
+        th { background: #1f2937; color: #fff; font-weight: bold; font-size: 10px; }
+        td { font-size: 10px; }
+        .page-break { page-break-before: always; }
+        tbody tr:nth-child(even) { background: #f9fafb; }
     </style>
 </head>
 <body>
-    <h2>MASJID AL-AMEEN ACADEMY - CALENDAR OF EVENTS | TERM 1-3 2025</h2>
-    <h3>ACADEMIC CALENDAR OF EVENTS</h3>
+    <div class="header">
+        <img src="{{ public_path('images/alameen-academy-logo.png') }}" alt="Alameen Academy Logo" class="logo">
+        <h1>Alameen Academy - Calendar of Events</h1>
+    </div>
 
     @php
         $groupedEvents = $events->sortBy(['term.name', 'event_date'])->groupBy('term.name');
@@ -41,15 +33,13 @@
             <div class="page-break"></div>
         @endif
 
-        <h3>Term {{ str_replace('Term ', '', $term) }} Events</h3>
+        <h3>{{ $term ?? 'Uncategorized' }}</h3>
 
         <table>
             <thead>
                 <tr>
                     <th>Term</th>
                     <th>Week</th>
-                    <!--<th>Start Date</th>-->
-                    <!--<th>End Date</th>-->
                     <th>Event Name</th>
                     <th>Event Date</th>
                     <th>In-Charge</th>
@@ -59,10 +49,8 @@
             <tbody>
                 @foreach ($termEvents as $event)
                     <tr>
-                        <td>{{ str_replace('Term ', '', $event->term->name) ?? 'N/A' }}</td>
-                        <td>{{ preg_replace('/\D/', '', $event->week->name) ?? 'N/A' }}</td>
-                        <!--<td>{{ $event->week->start_date ?? 'N/A' }}</td>-->
-                        <!--<td>{{ $event->week->end_date ?? 'N/A' }}</td>-->
+                        <td>{{ str_replace('Term ', '', $event->term->name ?? '') ?: 'N/A' }}</td>
+                        <td>{{ preg_replace('/\D/', '', $event->week->name ?? '') ?: 'N/A' }}</td>
                         <td>{{ $event->name }}</td>
                         <td>{{ $event->event_date }}</td>
                         <td>{{ $event->in_charge }}</td>
@@ -70,7 +58,7 @@
                             @if ($event->classes->isNotEmpty())
                                 {{ $event->classes->pluck('name')->join(', ') }}
                             @else
-                                N/A
+                                <em style="color: #9ca3af;">N/A</em>
                             @endif
                         </td>
                     </tr>

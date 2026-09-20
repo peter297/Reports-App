@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Enrollment;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EnrollmentPolicy
@@ -15,7 +15,7 @@ class EnrollmentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasUnrestrictedAccess() || $user->can('view_any_enrollment');
+        return $user->can('view_any_enrollment');
     }
 
     /**
@@ -23,8 +23,7 @@ class EnrollmentPolicy
      */
     public function view(User $user, Enrollment $enrollment): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->can('view_enrollment'))
-            && ($user->hasUnrestrictedAccess() || $enrollment->branch === $user->branch);
+        return $user->can('view_enrollment');
     }
 
     /**
@@ -40,8 +39,7 @@ class EnrollmentPolicy
      */
     public function update(User $user, Enrollment $enrollment): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->can('update_enrollment'))
-            && ($user->hasUnrestrictedAccess() || $enrollment->branch === $user->branch);
+        return $user->can('update_enrollment');
     }
 
     /**
@@ -49,8 +47,7 @@ class EnrollmentPolicy
      */
     public function delete(User $user, Enrollment $enrollment): bool
     {
-        return ($user->hasUnrestrictedAccess() || $user->can('delete_enrollment'))
-            && ($user->hasUnrestrictedAccess() || $enrollment->branch === $user->branch);
+        return $user->can('delete_enrollment');
     }
 
     /**

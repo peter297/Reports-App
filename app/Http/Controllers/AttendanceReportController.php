@@ -6,6 +6,11 @@ use App\Models\Attendance;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Collection;
 use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\Border;
+use OpenSpout\Common\Entity\Style\BorderPart;
+use OpenSpout\Common\Entity\Style\CellAlignment;
+use OpenSpout\Common\Entity\Style\Color;
+use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,33 +31,220 @@ class AttendanceReportController extends Controller
         $report = $this->report($period);
 
         return response()->streamDownload(function () use ($report): void {
-            $writer = new XlsxWriter();
+            $writer = new XlsxWriter;
             $writer->openToBrowser("attendance-{$report['period']}-report.xlsx");
+
+            // --- Styles ---
+            $titleStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(16)
+                ->setFontColor(Color::toARGB(Color::DARK_BLUE))
+                ->setCellAlignment(CellAlignment::CENTER);
+
+            $subtitleStyle = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(11)
+                ->setFontColor(Color::toARGB('6B7280'))
+                ->setCellAlignment(CellAlignment::CENTER);
+
+            $headerStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(11)
+                ->setFontColor(Color::toARGB(Color::WHITE))
+                ->setBackgroundColor(Color::toARGB(Color::DARK_BLUE))
+                ->setCellAlignment(CellAlignment::CENTER)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $dataStyle = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setCellAlignment(CellAlignment::LEFT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $dataStyleRight = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $successStyle = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::GREEN))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $dangerStyle = (new Style)
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::RED))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $boldSuccessStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::GREEN))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $boldDangerStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::RED))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::BOTTOM, Color::toARGB('D1D5DB'), Border::WIDTH_THIN, Border::STYLE_SOLID),
+                ));
+
+            $totalLabelStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setBackgroundColor(Color::toARGB('F3F4F6'))
+                ->setCellAlignment(CellAlignment::LEFT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::TOP, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                    new BorderPart(Border::BOTTOM, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                ));
+
+            $totalStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setBackgroundColor(Color::toARGB('F3F4F6'))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::TOP, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                    new BorderPart(Border::BOTTOM, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                ));
+
+            $totalSuccessStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::GREEN))
+                ->setBackgroundColor(Color::toARGB('F3F4F6'))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::TOP, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                    new BorderPart(Border::BOTTOM, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                ));
+
+            $totalDangerStyle = (new Style)
+                ->setFontBold()
+                ->setFontName('Arial')
+                ->setFontSize(10)
+                ->setFontColor(Color::toARGB(Color::RED))
+                ->setBackgroundColor(Color::toARGB('F3F4F6'))
+                ->setCellAlignment(CellAlignment::RIGHT)
+                ->setBorder(new Border(
+                    new BorderPart(Border::TOP, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                    new BorderPart(Border::BOTTOM, Color::toARGB(Color::DARK_BLUE), Border::WIDTH_MEDIUM, Border::STYLE_SOLID),
+                ));
+
+            // --- Title Row ---
             $writer->addRow(Row::fromValues([
-                ucfirst($report['period']) . ' Period',
-                'Branch',
-                'Section',
-                'Attendance Records',
-                'Total Learners',
-                'Total Present',
-                'Total Absent',
-                'Percentage Present',
-                'Percentage Absent',
-            ]));
+                'Alameen Academy - '.ucfirst($report['period']).' Attendance Report',
+            ], $titleStyle));
+
+            // Empty spacer row
+            $writer->addRow(Row::fromValues(['']));
+
+            // --- Header Row ---
+            $headers = ['Period', 'Branch', 'Section', 'Records', 'Total Learners', 'Total Present', 'Total Absent', '% Present', '% Absent'];
+            $writer->addRow(Row::fromValues($headers, $headerStyle));
+
+            // --- Data Rows ---
+            $grandTotalLearners = 0;
+            $grandTotalPresent = 0;
+            $grandTotalAbsent = 0;
 
             foreach ($report['rows'] as $row) {
-                $writer->addRow(Row::fromValues([
-                    $row['period_label'],
-                    $row['branch'],
-                    $row['section'],
-                    $row['record_count'],
-                    $row['class_total'],
-                    $row['total_present'],
-                    $row['total_absent'],
-                    $row['percentage_present'],
-                    $row['percentage_absent'],
-                ]));
+                $grandTotalLearners += $row['class_total'];
+                $grandTotalPresent += $row['total_present'];
+                $grandTotalAbsent += $row['total_absent'];
+
+                $writer->addRow(Row::fromValuesWithStyles(
+                    [
+                        $row['period_label'],
+                        $row['branch'],
+                        $row['section'],
+                        $row['record_count'],
+                        $row['class_total'],
+                        $row['total_present'],
+                        $row['total_absent'],
+                        $row['percentage_present'],
+                        $row['percentage_absent'],
+                    ],
+                    $dataStyle,
+                    [
+                        3 => $dataStyleRight,
+                        4 => $dataStyleRight,
+                        5 => $successStyle,
+                        6 => $dangerStyle,
+                        7 => $boldSuccessStyle,
+                        8 => $boldDangerStyle,
+                    ],
+                ));
             }
+
+            // --- Grand Total Row ---
+            if (count($report['rows']) > 1) {
+                $grandPercentagePresent = $grandTotalLearners > 0
+                    ? round(($grandTotalPresent / $grandTotalLearners) * 100, 2)
+                    : 0;
+
+                $writer->addRow(Row::fromValuesWithStyles(
+                    [
+                        'GRAND TOTAL',
+                        '',
+                        '',
+                        count($report['rows']),
+                        $grandTotalLearners,
+                        $grandTotalPresent,
+                        $grandTotalAbsent,
+                        $grandPercentagePresent,
+                        round(100 - $grandPercentagePresent, 2),
+                    ],
+                    $totalLabelStyle,
+                    [
+                        3 => $totalStyle,
+                        4 => $totalStyle,
+                        5 => $totalSuccessStyle,
+                        6 => $totalDangerStyle,
+                        7 => $totalSuccessStyle,
+                        8 => $totalDangerStyle,
+                    ],
+                ));
+            }
+
+            // --- Set Column Widths ---
+            $writer->getCurrentSheet()->setColumnWidthForRange(28, 1, 1);  // Period
+            $writer->getCurrentSheet()->setColumnWidthForRange(16, 2, 2);  // Branch
+            $writer->getCurrentSheet()->setColumnWidthForRange(20, 3, 3);  // Section
+            $writer->getCurrentSheet()->setColumnWidthForRange(12, 4, 4);  // Records
+            $writer->getCurrentSheet()->setColumnWidthForRange(14, 5, 5);  // Total Learners
+            $writer->getCurrentSheet()->setColumnWidthForRange(14, 6, 6);  // Total Present
+            $writer->getCurrentSheet()->setColumnWidthForRange(14, 7, 7);  // Total Absent
+            $writer->getCurrentSheet()->setColumnWidthForRange(12, 8, 8);  // % Present
+            $writer->getCurrentSheet()->setColumnWidthForRange(12, 9, 9);  // % Absent
 
             $writer->close();
         }, "attendance-{$period}-report.xlsx", [
@@ -111,9 +303,9 @@ class AttendanceReportController extends Controller
     private function groupKey(Attendance $attendance, string $period): string
     {
         return match ($period) {
-            'monthly' => $attendance->attendance_date?->format('Y-m') . '|' . $attendance->branch . '|' . $attendance->section,
-            'termly' => $attendance->year_session_id . '|' . $attendance->term_id . '|' . $attendance->branch . '|' . $attendance->section,
-            'yearly' => $attendance->year_session_id . '|' . $attendance->branch . '|' . $attendance->section,
+            'monthly' => $attendance->attendance_date?->format('Y-m').'|'.$attendance->branch.'|'.$attendance->section,
+            'termly' => $attendance->year_session_id.'|'.$attendance->term_id.'|'.$attendance->branch.'|'.$attendance->section,
+            'yearly' => $attendance->year_session_id.'|'.$attendance->branch.'|'.$attendance->section,
         };
     }
 
@@ -123,7 +315,7 @@ class AttendanceReportController extends Controller
 
         return match ($period) {
             'monthly' => $attendance->attendance_date?->format('F Y') ?? 'Unknown month',
-            'termly' => trim(($attendance->yearSession?->name ?? 'Unknown year') . ' - ' . ($attendance->term?->name ?? 'Unknown term')),
+            'termly' => trim(($attendance->yearSession?->name ?? 'Unknown year').' - '.($attendance->term?->name ?? 'Unknown term')),
             'yearly' => $attendance->yearSession?->name ?? 'Unknown year',
             default => $group->first()->attendance_date?->format('F Y') ?? 'Unknown period',
         };

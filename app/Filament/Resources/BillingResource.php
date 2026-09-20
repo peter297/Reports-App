@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\BillingResource\Pages;
-use App\Filament\Resources\BillingResource\RelationManagers;
 use App\Models\Billing;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BillingResource extends Resource
 {
@@ -24,12 +21,12 @@ class BillingResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canViewAny();
+        return false;
     }
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup= 'Admins Area';
+    protected static ?string $navigationGroup = 'Admins Area';
 
     public static function getNavigationBadge(): ?string
     {
