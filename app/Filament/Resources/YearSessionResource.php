@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\YearSessionResource\Pages;
-use App\Filament\Resources\YearSessionResource\RelationManagers;
 use App\Models\YearSession;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class YearSessionResource extends Resource
 {
@@ -19,20 +16,18 @@ class YearSessionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
-    protected static ?string $navigationLabel= 'School Sessions';
+    protected static ?string $navigationLabel = 'School Sessions';
 
-    protected static ?string $modelLabel= 'School Sessions';
+    protected static ?string $modelLabel = 'School Sessions';
 
-    protected static ?string $navigationGroup= 'System Settings';
+    protected static ?string $navigationGroup = 'System Settings';
 
-    protected static ?int $navigationSort= 1;
+    protected static ?int $navigationSort = 1;
 
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
     }
-
-
 
     public static function form(Form $form): Form
     {
@@ -41,6 +36,10 @@ class YearSessionResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Toggle::make('is_active')
+                    ->label('Active Session')
+                    ->helperText('Only one session can be active at a time.')
+                    ->default(false),
             ]);
     }
 
@@ -50,6 +49,10 @@ class YearSessionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

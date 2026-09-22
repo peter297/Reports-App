@@ -13,6 +13,7 @@ class Stream extends Model
     protected $fillable = [
         'class_id',
         'name',
+        'branch',
         'section',
     ];
 

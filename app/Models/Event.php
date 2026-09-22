@@ -10,11 +10,9 @@ class Event extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'description', 'event_date', 'status', 'branch','is_active',
-        'in_charge', 'term_id','event_week'
+        'name', 'description', 'calendar_path', 'event_date', 'end_date', 'status', 'branch', 'is_active',
+        'in_charge', 'term_id', 'event_week',
     ];
-
-
 
     public function classes()
     {
@@ -30,7 +28,4 @@ class Event extends Model
     {
         return $this->belongsTo(Term::class, 'term_id'); // Ensure 'term_id' matches your column name
     }
-
-
-
 }

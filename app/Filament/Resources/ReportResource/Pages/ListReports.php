@@ -4,8 +4,8 @@ namespace App\Filament\Resources\ReportResource\Pages;
 
 use App\Filament\Resources\ReportResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
+use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,6 +38,7 @@ class ListReports extends ListRecords
 
                     return $query->where(function (Builder $query): void {
                         $query->where('reports.user_id', Auth::id())
+                            ->orWhereHas('recipients', fn (Builder $query): Builder => $query->where('users.id', Auth::id()))
                             ->orWhereHas('user', fn (Builder $query) => $query->where('line_manager_id', Auth::id()));
                     });
                 }),
@@ -46,10 +47,15 @@ class ListReports extends ListRecords
                 ->query(fn (Builder $query) => $query->where('user_id', Auth::id())),
 
             'Received Reports' => Tab::make('Received Reports')
-                ->query(fn (Builder $query): Builder => $query->whereHas(
-                    'user',
-                    fn (Builder $query): Builder => $query->where('line_manager_id', Auth::id()),
-                )),
+                ->query(fn (Builder $query): Builder => $query->where(function (Builder $query): Builder {
+                    return $query->whereHas(
+                        'recipients',
+                        fn (Builder $query): Builder => $query->where('users.id', Auth::id()),
+                    )->orWhereHas(
+                        'user',
+                        fn (Builder $query): Builder => $query->where('line_manager_id', Auth::id()),
+                    );
+                })),
         ];
     }
 
@@ -60,7 +66,7 @@ class ListReports extends ListRecords
         // Check the current tab and modify actions accordingly
         if ($this->getCurrentTab() === 'Received Reports') {
             // Remove the Edit action or disable it
-            return array_filter($actions, fn ($action) => !($action instanceof Actions\EditAction));
+            return array_filter($actions, fn ($action) => ! ($action instanceof Actions\EditAction));
         }
 
         return $actions;

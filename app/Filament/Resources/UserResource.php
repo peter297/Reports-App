@@ -97,8 +97,17 @@ class UserResource extends Resource
 
                         $roles = array_merge(
                             $rolesByBranch[$get('branch')] ?? [],
-                            ['CEO', 'Principal', 'HeadTeacher', 'ICT Department', 'Admin', 'super_admin'],
+                            ['CEO', 'Principal', 'HeadTeacher', 'ICT Department', 'Admin'],
+                            array_filter([
+                                config('filament-shield.app_user.name', 'app_user'),
+                                config('filament-shield.staff_user.name', 'staff_user'),
+                                config('filament-shield.teacher_user.name', 'teacher_user'),
+                            ])
                         );
+
+                        if (auth()->user()?->hasRole(config('filament-shield.super_admin.name', 'super_admin'))) {
+                            $roles[] = config('filament-shield.super_admin.name', 'super_admin');
+                        }
 
                         return Role::query()
                             ->whereIn('name', array_unique($roles))

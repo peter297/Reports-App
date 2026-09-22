@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Helpers\Utils;
-use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use BezhanSalleh\FilamentShield\Traits\HasPanelShield;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -70,13 +69,57 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(SectionCoordinatorAssignment::class);
     }
 
-    public function canManageAttendance(string $branch, string $section): bool
+    public function canManageAttendance(string $branch, string $section, ?int $classId = null, ?int $streamId = null): bool
     {
-        return $this->hasUnrestrictedAccess()
-            || ($this->hasRole('Coordinators') && $this->sectionCoordinatorAssignments()
+        if ($this->hasUnrestrictedAccess()) {
+            return true;
+        }
+
+        if (! ($this->hasRole('Coordinators') && $this->sectionCoordinatorAssignments()
+            ->where('branch', $branch)
+            ->where('section', $section)
+            ->exists())) {
+            return false;
+        }
+
+        if ($classId && ! Stream::query()
+            ->where('branch', $branch)
+            ->where('section', $section)
+            ->where('class_id', $classId)
+            ->exists()) {
+            return false;
+        }
+
+        if ($streamId) {
+            $streamQuery = Stream::query()
                 ->where('branch', $branch)
                 ->where('section', $section)
-                ->exists());
+                ->whereKey($streamId);
+
+            if ($classId) {
+                $streamQuery->where('class_id', $classId);
+            }
+
+            if (! $streamQuery->exists()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Branches the user is assigned to coordinate.
+     *
+     * @return array<int, string>
+     */
+    public function coordinatedBranches(): array
+    {
+        return $this->sectionCoordinatorAssignments()
+            ->distinct()
+            ->orderBy('branch')
+            ->pluck('branch')
+            ->all();
     }
 
     public function hasUnrestrictedAccess(): bool
@@ -93,55 +136,33 @@ class User extends Authenticatable implements FilamentUser
 
     protected static function booted(): void
     {
-        // Check and create the staff_user role
-        if (config('filament-shield.staff_user.enabled', false)) {
-            FilamentShield::createRole(name: config('filament-shield.staff_user.name', 'staff_user'));
+        static::created(function (User $user) {
+            if ($user->roles()->exists()) {
+                return;
+            }
 
-            static::created(function (User $user) {
-                $user->assignRole(config('filament-shield.staff_user.name', 'staff_user'));
-            });
+            $defaultRole = config('filament-shield.app_user.name', 'app_user');
 
-            static::deleting(function (User $user) {
-                $user->removeRole(config('filament-shield.staff_user.name', 'staff_user'));
-            });
-        }
+            if (! config('filament-shield.app_user.enabled', false)) {
+                return;
+            }
 
-        // Check and create the app_user role
-        if (config('filament-shield.app_user.enabled', false)) {
-            FilamentShield::createRole(name: config('filament-shield.app_user.name', 'app_user'));
-
-            static::created(function (User $user) {
-                $user->assignRole(config('filament-shield.app_user.name', 'app_user'));
-            });
-
-            static::deleting(function (User $user) {
-                $user->removeRole(config('filament-shield.app_user.name', 'app_user'));
-            });
-        }
-
-        // Check and create the teacher_user role
-        if (config('filament-shield.teacher_user.enabled', false)) {
-            FilamentShield::createRole(name: config('filament-shield.teacher_user.name', 'teacher_user'));
-
-            static::created(function (User $user) {
-                $user->assignRole(config('filament-shield.teacher_user.name', 'teacher_user'));
-            });
-
-            static::deleting(function (User $user) {
-                $user->removeRole(config('filament-shield.teacher_user.name', 'teacher_user'));
-            });
-        }
+            try {
+                $user->assignRole($defaultRole);
+            } catch (\Exception $e) {
+                report($e);
+            }
+        });
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
         if ($panel->getId() === 'admin') {
-            // Allow access if user is super admin, has shield roles, or has ANY role assigned
-            return $this->hasRole(Utils::getSuperAdminName())
+            return $this->hasUnrestrictedAccess()
+                || $this->hasRole(Utils::getSuperAdminName())
                 || $this->hasRole(config('filament-shield.app_user.name', 'app_user'))
                 || $this->hasRole(config('filament-shield.staff_user.name', 'staff_user'))
-                || $this->hasRole(config('filament-shield.teacher_user.name', 'teacher_user'))
-                || $this->roles()->exists(); // <-- Ensures any assigned role grants access
+                || $this->hasRole(config('filament-shield.teacher_user.name', 'teacher_user'));
         }
 
         if ($panel->getId() === 'app') {

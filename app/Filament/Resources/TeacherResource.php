@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TeacherResource\Pages;
-use App\Filament\Resources\TeacherResource\RelationManagers;
 use App\Models\Teacher;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TeacherResource extends Resource
 {
@@ -21,7 +18,9 @@ class TeacherResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasRole('super_admin') ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_teacher')) ?? false;
     }
 
     public static function form(Form $form): Form

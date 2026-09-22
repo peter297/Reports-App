@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ClassesResource\Pages;
-use App\Filament\Resources\ClassesResource\RelationManagers;
 use App\Models\Classes;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ClassesResource extends Resource
 {
@@ -19,7 +16,7 @@ class ClassesResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup= 'System Settings';
+    protected static ?string $navigationGroup = 'System Settings';
 
     public static function getNavigationBadge(): ?string
     {
@@ -33,6 +30,14 @@ class ClassesResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('branch')
+                    ->options([
+                        'Juja Road' => 'Juja Road',
+                        'Kitisuru' => 'Kitisuru',
+                        'South C' => 'South C',
+                    ])
+                    ->searchable()
+                    ->required(),
             ]);
     }
 
@@ -41,6 +46,10 @@ class ClassesResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('branch')
+                    ->badge()
+                    ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -52,7 +61,12 @@ class ClassesResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('branch')
+                    ->options([
+                        'Juja Road' => 'Juja Road',
+                        'Kitisuru' => 'Kitisuru',
+                        'South C' => 'South C',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

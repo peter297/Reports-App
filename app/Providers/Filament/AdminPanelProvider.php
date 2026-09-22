@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use EightyNine\Reports\ReportsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -17,8 +18,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use EightyNine\Reports\ReportsPlugin;
-use Filament\Widgets\View\WidgetsRenderHook;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -29,7 +28,6 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->registration()
             ->profile()
             ->passwordReset()
             ->emailVerification()

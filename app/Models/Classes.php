@@ -10,8 +10,9 @@ class Classes extends Model
 {
     use HasFactory;
 
-    protected $fillable =[
+    protected $fillable = [
         'name',
+        'branch',
 
     ];
 
@@ -29,6 +30,4 @@ class Classes extends Model
     {
         return $this->belongsToMany(Event::class, 'class_event', 'class_id', 'event_id');
     }
-
-
 }

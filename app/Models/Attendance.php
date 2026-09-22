@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class Attendance extends Model
 {
@@ -41,6 +41,21 @@ class Attendance extends Model
     protected static function booted(): void
     {
         static::saving(function (Attendance $attendance): void {
+            $user = Auth::hasUser() ? Auth::user() : null;
+
+            if ($user instanceof User && ! $user->hasUnrestrictedAccess()) {
+                abort_unless(
+                    $user->canManageAttendance(
+                        (string) $attendance->branch,
+                        (string) $attendance->section,
+                        $attendance->class_id ? (int) $attendance->class_id : null,
+                        $attendance->stream_id ? (int) $attendance->stream_id : null,
+                    ),
+                    403,
+                    'You are not authorized to record attendance for this branch, section, class or stream.'
+                );
+            }
+
             $attendance->total_boys = (int) $attendance->total_boys;
             $attendance->total_girls = (int) $attendance->total_girls;
             $attendance->class_total = $attendance->total_boys + $attendance->total_girls;
@@ -59,8 +74,14 @@ class Attendance extends Model
             return $query;
         }
 
-        return $query->where(function (Builder $query) use ($user): void {
-            foreach ($user->sectionCoordinatorAssignments as $assignment) {
+        $assignments = $user->sectionCoordinatorAssignments;
+
+        if ($assignments->isEmpty()) {
+            return $query->whereKey(0);
+        }
+
+        return $query->where(function (Builder $query) use ($assignments): void {
+            foreach ($assignments as $assignment) {
                 $query->orWhere(function (Builder $query) use ($assignment): void {
                     $query->where('branch', $assignment->branch)
                         ->where('section', $assignment->section);
@@ -101,7 +122,6 @@ class Attendance extends Model
         return $this->belongsTo(Week::class);
     }
 
-    
     public function class()
     {
         return $this->belongsTo(Classes::class, 'class_id');
@@ -111,7 +131,4 @@ class Attendance extends Model
     {
         return $this->belongsTo(Stream::class, 'stream_id');
     }
-    
-
-    
 }

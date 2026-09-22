@@ -49,7 +49,7 @@ class EnrollmentResource extends Resource
                         'South C' => 'South C',
                     ])
                     ->default(fn (): ?string => auth()->user()?->branch)
-                    ->disabled(fn (): bool => !(auth()->user()?->hasUnrestrictedAccess() ?? false))
+                    ->disabled(fn (): bool => ! (auth()->user()?->hasUnrestrictedAccess() ?? false))
                     ->dehydrated()
                     ->required(),
                 Forms\Components\Select::make('year_session_id')
@@ -57,11 +57,13 @@ class EnrollmentResource extends Resource
                     ->relationship('yearSession', 'name')
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
                     ->required(),
                 Forms\Components\Select::make('term_id')
                     ->relationship('term', 'name')
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?int => \App\Models\Term::active()?->id)
                     ->required(),
                 Forms\Components\TextInput::make('total_learners')
                     ->label('Total Number of Learners (Calculated)')

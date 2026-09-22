@@ -4,22 +4,22 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ItemRequestResource\Pages;
 use App\Models\ItemRequest;
-use Filament\Forms;
+use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Hidden;
 
 class ItemRequestResource extends Resource
 {
     protected static ?string $model = ItemRequest::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -40,6 +40,7 @@ class ItemRequestResource extends Resource
                             ->relationship(name: 'year_session', titleAttribute: 'name')
                             ->searchable()
                             ->preload()
+                            ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
                             ->required()
                             ->live(), // Updates terms dynamically
 
@@ -47,6 +48,7 @@ class ItemRequestResource extends Resource
                             ->relationship(name: 'term', titleAttribute: 'name')
                             ->searchable()
                             ->preload()
+                            ->default(fn (): ?int => \App\Models\Term::active()?->id)
                             ->required()
                             ->options(fn ($get) => \App\Models\Term::where('year_session_id', $get('year_session_id'))
                                 ->latest()
@@ -120,14 +122,14 @@ class ItemRequestResource extends Resource
             Tables\Columns\TextColumn::make('year_session.name')->label('Session')->sortable(),
             Tables\Columns\TextColumn::make('term.name')->label('Term')->sortable(),
             Tables\Columns\TextColumn::make('week.name')->label('Week')->sortable(),
-            
+
             Tables\Columns\TextColumn::make('items')
                 ->formatStateUsing(fn ($state) => is_array($state) ? collect($state)->pluck('item_name')->implode(', ') : 'No items')
                 ->label('Items'),
 
             Tables\Columns\TextColumn::make('estimate_cost')
                 ->label('Total Cost')
-                ->formatStateUsing(fn ($state) => is_array($state) ? 'Ksh ' . collect($state)->sum('estimate_cost') : 'Ksh 0'),
+                ->formatStateUsing(fn ($state) => is_array($state) ? 'Ksh '.collect($state)->sum('estimate_cost') : 'Ksh 0'),
 
             Tables\Columns\TextColumn::make('description')->label('Description')->searchable(),
             Tables\Columns\TextColumn::make('remarks')->label('Remarks')->searchable(),

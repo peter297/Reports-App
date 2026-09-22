@@ -1,0 +1,71 @@
+name: Deploy Laravel & Filament Application via FTP
+
+on:
+  push:
+    branches:
+      - master 
+
+jobs:
+  web-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 2. Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Laravel 11 requires PHP 8.2+
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, bcmath, zip, gd
+          tools: composer:v2
+
+      - name: 3. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 4. Install Composer Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: 5. Install NPM Dependencies & Build Assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: 6. Publish & Optimize Filament Assets
+        run: |
+          php artisan filament:assets --ansi
+
+      - name: 7. Prepare Directory Keeps
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+          touch storage/framework/cache/data/.gitkeep
+          touch storage/framework/sessions/.gitkeep
+          touch storage/framework/views/.gitkeep
+          touch storage/logs/.gitkeep
+
+      - name: 8. Sync Files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          protocol: ftp
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_SERVER_DIR || '/public_html/' }}
+          exclude: |
+            **/.git*
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            **/.env
+            **/.env.*
+            **/phpunit.xml
+            **/README.md
+            **/.phpunit.cache/**
+            **/storage/*.key

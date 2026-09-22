@@ -20,7 +20,10 @@ Route::redirect('/', '/admin');
 //     return 'Symlink created successfully.';
 // });
 
-Route::get('/events/pdf', [EventController::class, 'generatePDF'])->name('events.pdf');
+Route::get('/events/pdf', [EventController::class, 'generatePDF'])->name('events.pdf')->middleware('auth');
+Route::get('/events/uploaded-calendar', [EventController::class, 'downloadUploadedCalendar'])->name('events.calendar.download')->middleware('auth');
+Route::get('/events/calendar/{year}/{month}', [EventController::class, 'calendarPdf'])->name('events.calendar.pdf')->middleware('auth');
+Route::get('/events/{event}/calendar', [EventController::class, 'previewCalendar'])->name('events.calendar')->middleware('auth');
 Route::get('/reports/{report}/pdf', [ReportController::class, 'pdf'])->name('reports.pdf')->middleware('auth');
 Route::get('/enrollments/pdf', [EnrollmentController::class, 'pdf'])->name('enrollments.pdf')->middleware('auth');
 Route::get('/enrollments/excel', [EnrollmentController::class, 'excel'])->name('enrollments.excel')->middleware('auth');

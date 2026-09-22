@@ -2,18 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Report extends Model
 {
     protected $fillable = [
-        'user_id', 
-        'category', 
-        'subject', 
+        'user_id',
+        'category',
+        'subject',
         'summary',
         'file_paths',
         'pdf_path',
@@ -31,6 +30,7 @@ class Report extends Model
 
         return $query->where(function (Builder $query) use ($user): void {
             $query->where('reports.user_id', $user->id)
+                ->orWhereHas('recipients', fn (Builder $query): Builder => $query->where('users.id', $user->id))
                 ->orWhereHas('user', fn (Builder $query): Builder => $query->where('line_manager_id', $user->id));
         });
     }
@@ -51,7 +51,7 @@ class Report extends Model
     public function recipients(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'report_user', 'report_id', 'user_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -87,7 +87,4 @@ class Report extends Model
             }
         });
     }
-
-
-    
 }

@@ -16,12 +16,14 @@ class BillingResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_billing')) ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return static::canViewAny();
     }
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';

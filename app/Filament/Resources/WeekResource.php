@@ -3,10 +3,8 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WeekResource\Pages;
-use App\Filament\Resources\WeekResource\RelationManagers;
 use App\Models\Term;
 use App\Models\Week;
-use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -14,8 +12,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WeekResource extends Resource
 {
@@ -23,16 +19,16 @@ class WeekResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-date-range';
 
-    protected static ?string $navigationGroup= 'System Settings';
+    protected static ?string $navigationGroup = 'System Settings';
 
-    protected static ?string $slug= 'term-weeks';
+    protected static ?string $slug = 'term-weeks';
 
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::count();
     }
 
-    protected static ?int $navigationSort= 3;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -45,6 +41,7 @@ class WeekResource extends Resource
                     ) // Get last 3 terms sorted by ID ascending
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?int => Term::active()?->id)
                     ->required(),
 
                 TextInput::make('name')

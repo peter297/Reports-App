@@ -2,25 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use App\Models\Report;
-use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\Select;
-use Filament\Notifications\Notification;
-use Filament\Infolists\Infolist;
 use App\Filament\Resources\ReportResource\Pages;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\HtmlString;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use App\Models\Report;
+use Filament\Forms;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
 use Filament\Infolists\Components;
-use Filament\Forms\Components\SpatieTagsEntry;
+use Filament\Infolists\Infolist;
+use Filament\Notifications\Notification;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Pages\Page;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ReportResource extends Resource
 {
@@ -30,7 +29,7 @@ class ReportResource extends Resource
 
     //protected static ?string $navigationGroup= 'Admin Reports';
 
-    protected static ?string $slug= 'organization-reports';
+    protected static ?string $slug = 'organization-reports';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -44,6 +43,7 @@ class ReportResource extends Resource
     public static function form(Form $form): Form
     {
         $currentUserId = Auth::id();
+
         return $form
             ->schema([
                 Forms\Components\Section::make('Report Details')
@@ -57,7 +57,6 @@ class ReportResource extends Resource
                                 'Admin Reports' => 'Admin Reports',
                             ])
                             ->placeholder('Select a Category'),
-
 
                         TextInput::make('subject')
                             ->required()
@@ -89,7 +88,7 @@ class ReportResource extends Resource
                         Forms\Components\FileUpload::make('file_paths')
                             ->preserveFilenames()
                             ->directory('attachments')
-                            ->getUploadedFileNameForStorageUsing(function(TemporaryUploadedFile $file): string{
+                            ->getUploadedFileNameForStorageUsing(function (TemporaryUploadedFile $file): string {
                                 return (string) str($file->getClientOriginalName())->prepend(now()->timestamp);
                             })
                             ->multiple()
@@ -99,7 +98,7 @@ class ReportResource extends Resource
                             ->downloadable()
                             ->label('Attachments')
                             ->disk('public')
-                            ->uploadingMessage('Uploading attachment...')
+                            ->uploadingMessage('Uploading attachment...'),
                     ])->columns(2),
             ]);
     }
@@ -107,64 +106,59 @@ class ReportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-        ->columns([
-            TextColumn::make('category')
-                ->sortable()
-                ->searchable()
-                ->label('Category'),
+            ->columns([
+                TextColumn::make('category')
+                    ->sortable()
+                    ->searchable()
+                    ->label('Category'),
 
-            TextColumn::make('subject')
-                ->sortable()
-                ->searchable()
-                ->label('Subject'),
+                TextColumn::make('subject')
+                    ->sortable()
+                    ->searchable()
+                    ->label('Subject'),
 
-            TextColumn::make('user.name')
-                ->label('Sender')
-                ->sortable()
-                ->searchable()
-                ->toggleable(isToggledHiddenByDefault: false),
+                TextColumn::make('user.name')
+                    ->label('Sender')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
-            TextColumn::make('recipients.name')
-                ->label('Recipients')
-                ->toggleable(isToggledHiddenByDefault: false),
+                TextColumn::make('recipients.name')
+                    ->label('Recipients')
+                    ->toggleable(isToggledHiddenByDefault: false),
 
-            TextColumn::make('created_at')
-                ->label('Created Date')
-                ->sortable()
-                ->color('success')
-                ->badge()
-                ->formatStateUsing(fn ($state) => \Carbon\Carbon::parse($state)->format('M d, Y'))
-                ->toggleable(isToggledHiddenByDefault: false),
+                TextColumn::make('created_at')
+                    ->label('Created Date')
+                    ->sortable()
+                    ->color('success')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => \Carbon\Carbon::parse($state)->format('M d, Y'))
+                    ->toggleable(isToggledHiddenByDefault: false),
 
-            TextColumn::make('updated_at')
-                ->label('Updated Date')
-                ->sortable()
-                ->color('success')
-                ->badge()
-                ->formatStateUsing(fn ($state) => \Carbon\Carbon::parse($state)->format('M d, Y'))
-                ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
+                    ->label('Updated Date')
+                    ->sortable()
+                    ->color('success')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => \Carbon\Carbon::parse($state)->format('M d, Y'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
-            TextColumn::make('file_paths')
-                ->formatStateUsing(function (Report $record) {
-                    return collect($record->file_paths)->map(function ($path) {
-                        $filename = basename($path);
-                        // Remove the random numbers before the filename using regex
-                        $cleanFilename = preg_replace('/^\d+/', '', $filename);
-                        $cleanFilename = ltrim($cleanFilename, '_ '); // Remove any leading underscores or spaces
-                        $url = asset('storage/attachments/' . $filename);
-                        return "<a href=\"{$url}\" target=\"_blank\" class=\" bg-blue-500 rounded px-2 py-1 mb-1 mr-1 text-sm hover:underline\">{$cleanFilename}</a>";
-                    })->implode(''); // Join badges without additional separators
-                })
-                ->label('Attachments')
-                ->html(),
+                TextColumn::make('file_paths')
+                    ->formatStateUsing(function (Report $record) {
+                        return collect($record->file_paths)->map(function ($path) {
+                            $filename = basename($path);
+                            // Remove the random numbers before the filename using regex
+                            $cleanFilename = preg_replace('/^\d+/', '', $filename);
+                            $cleanFilename = ltrim($cleanFilename, '_ '); // Remove any leading underscores or spaces
+                            $url = asset('storage/attachments/'.$filename);
 
+                            return "<a href=\"{$url}\" target=\"_blank\" class=\" bg-blue-500 rounded px-2 py-1 mb-1 mr-1 text-sm hover:underline\">{$cleanFilename}</a>";
+                        })->implode(''); // Join badges without additional separators
+                    })
+                    ->label('Attachments')
+                    ->html(),
 
-
-        ])
-
-
-
-
+            ])
 
             ->filters([
                 //
@@ -178,7 +172,7 @@ class ReportResource extends Resource
                             ->success()
                             ->title('Report Deleted.')
                             ->body('The Report is Deleted Successfully!')
-                    )
+                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -186,11 +180,6 @@ class ReportResource extends Resource
                 ]),
             ]);
     }
-
-
-
-
-
 
     public static function infolist(Infolist $infolist): Infolist
     {
@@ -225,7 +214,6 @@ class ReportResource extends Resource
                     ])
                     ->collapsible(),
 
-
                 Components\Section::make('Attachments')
                     ->schema([
                         Components\TextEntry::make('file_paths')
@@ -235,7 +223,8 @@ class ReportResource extends Resource
                                     $filename = basename($path);
                                     $cleanFilename = preg_replace('/^\d+/', '', $filename);
                                     $cleanFilename = ltrim($cleanFilename, '_ ');
-                                    $url = asset('storage/attachments/' . $filename);
+                                    $url = asset('storage/attachments/'.$filename);
+
                                     return "<a href=\"{$url}\" target=\"_blank\" class=\"bg-blue-500 rounded px-2 py-1 inline-block mb-1\">{$cleanFilename}</a>";
                                 })->implode('<br>');
                             })
@@ -244,8 +233,6 @@ class ReportResource extends Resource
                     ->collapsible(),
             ]);
     }
-
-
 
     public static function getRecordSubNavigation(Page $page): array
     {
@@ -256,7 +243,16 @@ class ReportResource extends Resource
         ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
 
+        if (! $user) {
+            return parent::getEloquentQuery()->whereKey(0);
+        }
+
+        return parent::getEloquentQuery()->accessibleTo($user);
+    }
 
     public static function getRelations(): array
     {
@@ -275,6 +271,4 @@ class ReportResource extends Resource
             'view' => Pages\ViewReport::route('/{record}'),
         ];
     }
-
-
 }

@@ -2,20 +2,17 @@
 
 namespace App\Providers;
 
-
-use Illuminate\Support\ServiceProvider;
+use App\Helpers\Utils;
 use App\Models\Report;
-use App\Observers\ReportObserver;
 use App\Models\User;
-use App\Models\Teacher;
+use App\Observers\ReportObserver;
 use Filament\Http\Controllers\HomeController;
-use Route;
 use Illuminate\Support\Facades\Gate;
-
+use Illuminate\Support\ServiceProvider;
+use Route;
 
 class AppServiceProvider extends ServiceProvider
 {
-    
     public function register(): void
     {
         //
@@ -25,13 +22,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Report::observe(ReportObserver::class);
 
-        Gate::before(function (User $user, string $ability, mixed ...$arguments): ?bool {
-            if (str_ends_with($ability, '_teacher') || in_array(Teacher::class, $arguments, true)
-                || collect($arguments)->contains(fn (mixed $argument): bool => $argument instanceof Teacher)) {
-                return null;
+        Gate::before(function (User $user, string $ability): ?bool {
+            if ($user->hasRole(Utils::getSuperAdminName())) {
+                return true;
             }
 
-            return $user->hasUnrestrictedAccess() ? true : null;
+            return null;
         });
     }
 

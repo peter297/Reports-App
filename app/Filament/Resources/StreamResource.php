@@ -31,10 +31,22 @@ class StreamResource extends Resource
                     ->relationship(name: 'class', titleAttribute: 'name')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (Forms\Set $set, ?string $state): void {
+                        $set('branch', \App\Models\Classes::find($state)?->branch);
+                    })
                     ->required(),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Select::make('branch')
+                    ->options([
+                        'Juja Road' => 'Juja Road',
+                        'Kitisuru' => 'Kitisuru',
+                        'South C' => 'South C',
+                    ])
+                    ->required()
+                    ->searchable(),
                 Forms\Components\Select::make('section')
                     ->options([
                         'EYE' => 'EYE - Early Years Education',
@@ -56,6 +68,10 @@ class StreamResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->badge()
                     ->searchable(),
+                Tables\Columns\TextColumn::make('branch')
+                    ->badge()
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('section')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -74,7 +90,12 @@ class StreamResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('branch')
+                    ->options([
+                        'Juja Road' => 'Juja Road',
+                        'Kitisuru' => 'Kitisuru',
+                        'South C' => 'South C',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

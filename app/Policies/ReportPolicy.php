@@ -23,7 +23,17 @@ class ReportPolicy
      */
     public function view(User $user, Report $report): bool
     {
-        return $user->can('view_report');
+        if (! $user->can('view_report')) {
+            return false;
+        }
+
+        if ($user->hasUnrestrictedAccess()) {
+            return true;
+        }
+
+        return $report->user_id === $user->id
+            || $report->recipients()->where('users.id', $user->id)->exists()
+            || $report->user?->line_manager_id === $user->id;
     }
 
     /**
@@ -39,7 +49,11 @@ class ReportPolicy
      */
     public function update(User $user, Report $report): bool
     {
-        return $user->can('update_report');
+        if (! $user->can('update_report')) {
+            return false;
+        }
+
+        return $user->hasUnrestrictedAccess() || $report->user_id === $user->id;
     }
 
     /**
@@ -47,7 +61,11 @@ class ReportPolicy
      */
     public function delete(User $user, Report $report): bool
     {
-        return $user->can('delete_report');
+        if (! $user->can('delete_report')) {
+            return false;
+        }
+
+        return $user->hasUnrestrictedAccess() || $report->user_id === $user->id;
     }
 
     /**

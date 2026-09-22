@@ -27,22 +27,30 @@ class ReportTemplateResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_report::template')) ?? false;
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('create_report::template')) ?? false;
     }
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('update_report::template')) ?? false;
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('delete_report::template')) ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool

@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\TermResource\Pages;
-use App\Filament\Resources\TermResource\RelationManagers;
 use App\Models\Term;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TermResource extends Resource
 {
@@ -19,11 +16,11 @@ class TermResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-server-stack';
 
-    protected static ?string $navigationGroup= 'System Settings';
+    protected static ?string $navigationGroup = 'System Settings';
 
-    protected static ?string $slug= 'session-terms';
+    protected static ?string $slug = 'session-terms';
 
-    protected static ?int $navigationSort= 2;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationBadge(): ?string
     {
@@ -41,10 +38,15 @@ class TermResource extends Resource
                         modifyQueryUsing: fn ($query) => $query->latest()->take(1)->orderBy('id', 'asc')) // Sort by ID asc
                     ->searchable()
                     ->preload()
+                    ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
                     ->required(),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
+                Forms\Components\Toggle::make('is_active')
+                    ->label('Active Term')
+                    ->helperText('Only one term can be active at a time. Activating a term also activates its session.')
+                    ->default(false),
             ]);
     }
 
@@ -57,6 +59,10 @@ class TermResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Active')
+                    ->boolean()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
