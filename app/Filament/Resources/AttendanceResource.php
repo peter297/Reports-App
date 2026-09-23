@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class AttendanceResource extends Resource
 {
@@ -486,46 +487,197 @@ class AttendanceResource extends Resource
         return $table
             ->headerActions([
                 Tables\Actions\ActionGroup::make([
-                    // --- Period Reports ---
+                    // --- Weekly Report (pick a week) ---
                     Tables\Actions\Action::make('weeklyPdf')
                         ->label('Weekly Report PDF')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn (): string => route('attendances.report.pdf', ['period' => 'weekly']))
+                        ->form([
+                            Forms\Components\Select::make('week_id')
+                                ->label('Week')
+                                ->options(fn (): array => \App\Models\Week::with('term')
+                                    ->orderByDesc('id')
+                                    ->limit(24)
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\Week $week): array => [
+                                        $week->id => trim(($week->term?->name ?? '').' - '.$week->name),
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\Week::forDate(now())?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.weekly.pdf', ['week' => $data['week_id']]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('weeklyExcel')
                         ->label('Weekly Report Excel')
                         ->icon('heroicon-o-table-cells')
-                        ->url(fn (): string => route('attendances.report.excel', ['period' => 'weekly']))
+                        ->form([
+                            Forms\Components\Select::make('week_id')
+                                ->label('Week')
+                                ->options(fn (): array => \App\Models\Week::with('term')
+                                    ->orderByDesc('id')
+                                    ->limit(24)
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\Week $week): array => [
+                                        $week->id => trim(($week->term?->name ?? '').' - '.$week->name),
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\Week::forDate(now())?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.weekly.excel', ['week' => $data['week_id']]));
+                        })
                         ->openUrlInNewTab(),
+                    // --- Monthly Report (pick a month) ---
                     Tables\Actions\Action::make('monthlyPdf')
                         ->label('Monthly Report PDF')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn (): string => route('attendances.report.pdf', ['period' => 'monthly']))
+                        ->form([
+                            Forms\Components\Select::make('month')
+                                ->options([
+                                    1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                                    5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                                    9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+                                ])
+                                ->default(now()->month)
+                                ->required()
+                                ->native(false),
+                            Forms\Components\Select::make('year')
+                                ->options(fn (): array => collect(range(now()->year - 2, now()->year + 1))
+                                    ->mapWithKeys(fn (int $year): array => [$year => (string) $year])
+                                    ->all())
+                                ->default(now()->year)
+                                ->required()
+                                ->native(false),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.monthly.pdf', [
+                                'year' => $data['year'],
+                                'month' => $data['month'],
+                            ]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('monthlyExcel')
                         ->label('Monthly Report Excel')
                         ->icon('heroicon-o-table-cells')
-                        ->url(fn (): string => route('attendances.report.excel', ['period' => 'monthly']))
+                        ->form([
+                            Forms\Components\Select::make('month')
+                                ->options([
+                                    1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                                    5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                                    9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
+                                ])
+                                ->default(now()->month)
+                                ->required()
+                                ->native(false),
+                            Forms\Components\Select::make('year')
+                                ->options(fn (): array => collect(range(now()->year - 2, now()->year + 1))
+                                    ->mapWithKeys(fn (int $year): array => [$year => (string) $year])
+                                    ->all())
+                                ->default(now()->year)
+                                ->required()
+                                ->native(false),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.monthly.excel', [
+                                'year' => $data['year'],
+                                'month' => $data['month'],
+                            ]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('termlyPdf')
                         ->label('Termly Report PDF')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn (): string => route('attendances.report.pdf', ['period' => 'termly']))
+                        ->form([
+                            Forms\Components\Select::make('term_id')
+                                ->label('Term')
+                                ->options(fn (): array => \App\Models\Term::with('year_session')
+                                    ->orderByDesc('id')
+                                    ->limit(12)
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\Term $term): array => [
+                                        $term->id => trim(($term->year_session?->name ?? '').' - '.$term->name),
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\Term::active()?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.termly.pdf', ['term' => $data['term_id']]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('termlyExcel')
                         ->label('Termly Report Excel')
                         ->icon('heroicon-o-table-cells')
-                        ->url(fn (): string => route('attendances.report.excel', ['period' => 'termly']))
+                        ->form([
+                            Forms\Components\Select::make('term_id')
+                                ->label('Term')
+                                ->options(fn (): array => \App\Models\Term::with('year_session')
+                                    ->orderByDesc('id')
+                                    ->limit(12)
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\Term $term): array => [
+                                        $term->id => trim(($term->year_session?->name ?? '').' - '.$term->name),
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\Term::active()?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.termly.excel', ['term' => $data['term_id']]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('yearlyPdf')
                         ->label('Yearly Report PDF')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn (): string => route('attendances.report.pdf', ['period' => 'yearly']))
+                        ->form([
+                            Forms\Components\Select::make('year_session_id')
+                                ->label('Academic Year')
+                                ->options(fn (): array => \App\Models\YearSession::orderByDesc('id')
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\YearSession $session): array => [
+                                        $session->id => $session->name,
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.yearly.pdf', ['yearSession' => $data['year_session_id']]));
+                        })
                         ->openUrlInNewTab(),
                     Tables\Actions\Action::make('yearlyExcel')
                         ->label('Yearly Report Excel')
                         ->icon('heroicon-o-table-cells')
-                        ->url(fn (): string => route('attendances.report.excel', ['period' => 'yearly']))
+                        ->form([
+                            Forms\Components\Select::make('year_session_id')
+                                ->label('Academic Year')
+                                ->options(fn (): array => \App\Models\YearSession::orderByDesc('id')
+                                    ->get()
+                                    ->mapWithKeys(fn (\App\Models\YearSession $session): array => [
+                                        $session->id => $session->name,
+                                    ])
+                                    ->all())
+                                ->searchable()
+                                ->preload()
+                                ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
+                                ->required(),
+                        ])
+                        ->action(function (array $data, Component $livewire): void {
+                            $livewire->redirect(route('attendances.report.yearly.excel', ['yearSession' => $data['year_session_id']]));
+                        })
                         ->openUrlInNewTab(),
                 ])
                     ->label('Download Reports')
@@ -548,8 +700,8 @@ class AttendanceResource extends Resource
                             ->native(false)
                             ->afterOrEqual('date_from'),
                     ])
-                    ->action(function (array $data): void {
-                        $this->redirect(route('attendances.report.range.pdf', [
+                    ->action(function (array $data, Component $livewire): void {
+                        $livewire->redirect(route('attendances.report.range.pdf', [
                             'date_from' => $data['date_from'],
                             'date_to' => $data['date_to'],
                         ]));
@@ -569,8 +721,8 @@ class AttendanceResource extends Resource
                             ->native(false)
                             ->afterOrEqual('date_from'),
                     ])
-                    ->action(function (array $data): void {
-                        $this->redirect(route('attendances.report.range.excel', [
+                    ->action(function (array $data, Component $livewire): void {
+                        $livewire->redirect(route('attendances.report.range.excel', [
                             'date_from' => $data['date_from'],
                             'date_to' => $data['date_to'],
                         ]));
@@ -699,9 +851,9 @@ class AttendanceResource extends Resource
                         ->color('danger')
                         ->deselectRecordsAfterCompletion()
                         ->requiresConfirmation()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records): void {
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, Component $livewire): void {
                             $ids = $records->pluck('id')->implode(',');
-                            $this->redirect(route('attendances.report.selected.pdf', ['ids' => $ids]));
+                            $livewire->redirect(route('attendances.report.selected.pdf', ['ids' => $ids]));
                         }),
                     Tables\Actions\BulkAction::make('downloadSelectedExcel')
                         ->label('Download Selected Excel')
@@ -709,9 +861,9 @@ class AttendanceResource extends Resource
                         ->color('success')
                         ->deselectRecordsAfterCompletion()
                         ->requiresConfirmation()
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records): void {
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, Component $livewire): void {
                             $ids = $records->pluck('id')->implode(',');
-                            $this->redirect(route('attendances.report.selected.excel', ['ids' => $ids]));
+                            $livewire->redirect(route('attendances.report.selected.excel', ['ids' => $ids]));
                         }),
                 ]),
             ]);

@@ -51,24 +51,71 @@ class EventController extends Controller
         abort_unless($year >= 2000 && $year <= 2100 && $month >= 1 && $month <= 12, 404);
 
         $branch = $request->query('branch');
+        $events = $this->calendarEvents("{$year}-01-01", "{$year}-12-31", $branch);
 
-        $monthStart = Carbon::create($year, $month, 1)->startOfDay();
-        $monthEnd = $monthStart->copy()->endOfMonth();
-        $gridStart = $monthStart->copy()->startOfWeek(Carbon::SUNDAY);
-        $gridEnd = $monthEnd->copy()->endOfWeek(Carbon::SATURDAY);
+        return Pdf::loadView('pdf.events-calendar', [
+            'title' => Carbon::create($year, $month, 1)->format('F Y'),
+            'months' => [$this->buildCalendarMonth($year, $month, $events)],
+            'branch' => $branch && $branch !== 'all' ? $branch : null,
+            'branchColors' => $this->calendarBranchColors(),
+        ])
+            ->setPaper('a4', 'landscape')
+            ->stream("calendar-of-events-{$year}-".str_pad((string) $month, 2, '0', STR_PAD_LEFT).'.pdf');
+    }
 
-        $events = Event::query()
-            ->whereDate('event_date', '<=', $monthEnd->toDateString())
-            ->where(function ($query) use ($monthStart): void {
-                $query->whereDate('end_date', '>=', $monthStart->toDateString())
-                    ->orWhere(function ($query) use ($monthStart): void {
+    public function calendarYearPdf(int $year, Request $request): Response
+    {
+        abort_unless(auth()->user()?->can('view_any_event'), 403);
+        abort_unless($year >= 2000 && $year <= 2100, 404);
+
+        $branch = $request->query('branch');
+        $events = $this->calendarEvents("{$year}-01-01", "{$year}-12-31", $branch);
+
+        $months = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $months[] = $this->buildCalendarMonth($year, $month, $events);
+        }
+
+        return Pdf::loadView('pdf.events-calendar', [
+            'title' => "Academic Year {$year}",
+            'months' => $months,
+            'branch' => $branch && $branch !== 'all' ? $branch : null,
+            'branchColors' => $this->calendarBranchColors(),
+        ])
+            ->setPaper('a4', 'landscape')
+            ->stream("calendar-of-events-{$year}.pdf");
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Event>
+     */
+    private function calendarEvents(string $from, string $to, ?string $branch): \Illuminate\Database\Eloquent\Collection
+    {
+        return Event::query()
+            ->whereDate('event_date', '<=', $to)
+            ->where(function ($query) use ($from): void {
+                $query->whereDate('end_date', '>=', $from)
+                    ->orWhere(function ($query) use ($from): void {
                         $query->whereNull('end_date')
-                            ->whereDate('event_date', '>=', $monthStart->toDateString());
+                            ->whereDate('event_date', '>=', $from);
                     });
             })
             ->when($branch && $branch !== 'all', fn ($query) => $query->where('branch', $branch))
             ->orderBy('event_date')
             ->get();
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Event>  $events
+     * @return array<string, mixed>
+     */
+    private function buildCalendarMonth(int $year, int $month, \Illuminate\Database\Eloquent\Collection $events): array
+    {
+        $monthStart = Carbon::create($year, $month, 1)->startOfDay();
+        $monthEnd = $monthStart->copy()->endOfMonth();
+        $gridStart = $monthStart->copy()->startOfWeek(Carbon::SUNDAY);
+        $gridEnd = $monthEnd->copy()->endOfWeek(Carbon::SATURDAY);
 
         $weeks = [];
         $cursor = $gridStart->copy();
@@ -82,6 +129,11 @@ class EventController extends Controller
                 $week[] = [
                     'date' => $cursor->copy(),
                     'in_month' => $cursor->month === $month,
+                    'hijri_day' => \App\Helpers\HijriDate::fromGregorian(
+                        $cursor->year,
+                        $cursor->month,
+                        $cursor->day,
+                    )[2],
                     'events' => $events->filter(
                         fn (Event $event): bool => $day >= substr((string) $event->event_date, 0, 10)
                             && $day <= substr((string) ($event->end_date ?? $event->event_date), 0, 10)
@@ -94,14 +146,6 @@ class EventController extends Controller
             $weeks[] = $week;
         }
 
-        $branchColors = [
-            'All Branches' => '#7c3aed',
-            'Juja Rd' => '#f59e0b',
-            'Juja Road' => '#f59e0b',
-            'Kitisuru' => '#3b82f6',
-            'South C' => '#10b981',
-        ];
-
         $quoteImagePath = null;
         $quote = \App\Models\MonthQuote::query()
             ->where('year', $year)
@@ -112,15 +156,26 @@ class EventController extends Controller
             $quoteImagePath = Storage::disk('public')->path($quote->image_path);
         }
 
-        return Pdf::loadView('pdf.events-calendar', [
-            'monthLabel' => $monthStart->format('F Y'),
+        return [
+            'label' => $monthStart->format('F Y'),
+            'hijri_label' => \App\Helpers\HijriDate::monthLabel($year, $month),
             'weeks' => $weeks,
-            'branch' => $branch && $branch !== 'all' ? $branch : null,
-            'branchColors' => $branchColors,
             'quoteImagePath' => $quoteImagePath,
-        ])
-            ->setPaper('a4', 'landscape')
-            ->stream("calendar-of-events-{$year}-".str_pad((string) $month, 2, '0', STR_PAD_LEFT).'.pdf');
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function calendarBranchColors(): array
+    {
+        return [
+            'All Branches' => '#7c3aed',
+            'Juja Rd' => '#f59e0b',
+            'Juja Road' => '#f59e0b',
+            'Kitisuru' => '#3b82f6',
+            'South C' => '#10b981',
+        ];
     }
 
     public function generatePDF()

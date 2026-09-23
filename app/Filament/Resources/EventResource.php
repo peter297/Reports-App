@@ -128,22 +128,33 @@ class EventResource extends Resource
         return $table
             ->headerActions([
                 Action::make('generatedCalendar')
-                    ->label('Generated Calendar')
+                    ->label('Generated Calendar (Full Year)')
                     ->icon('heroicon-o-calendar-days')
                     ->form([
-                        Select::make('month')
-                            ->options([
-                                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
-                                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
-                                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
-                            ])
-                            ->default(now()->month)
-                            ->required(),
-                        TextInput::make('year')
-                            ->numeric()
-                            ->minValue(2000)
-                            ->maxValue(2100)
-                            ->default(now()->year)
+                        Select::make('year')
+                            ->label('Academic Year')
+                            ->options(function (): array {
+                                $current = now()->year;
+                                $years = collect(range($current - 1, $current + 4))
+                                    ->mapWithKeys(fn (int $year): array => [$year => "Academic Year {$year}"]);
+
+                                foreach (\App\Models\YearSession::orderBy('name')->pluck('name') as $name) {
+                                    if (preg_match('/(19|20)\d{2}/', (string) $name, $matches)) {
+                                        $years[(int) $matches[0]] = $name;
+                                    }
+                                }
+
+                                return $years->sortKeys()->all();
+                            })
+                            ->default(function (): int {
+                                $active = \App\Models\YearSession::active();
+
+                                if ($active && preg_match('/(19|20)\d{2}/', $active->name, $matches)) {
+                                    return (int) $matches[0];
+                                }
+
+                                return now()->year;
+                            })
                             ->required(),
                         Select::make('branch')
                             ->options([
@@ -158,9 +169,8 @@ class EventResource extends Resource
                             ->required(),
                     ])
                     ->action(function (array $data) {
-                        return redirect()->route('events.calendar.pdf', [
+                        return redirect()->route('events.calendar.year.pdf', [
                             'year' => $data['year'],
-                            'month' => $data['month'],
                             'branch' => $data['branch'],
                         ]);
                     }),
