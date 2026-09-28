@@ -15,17 +15,24 @@ class ReportTemplates extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-down-tray';
 
     protected static ?string $navigationGroup = 'Resources';
 
-    protected static ?string $navigationLabel = 'Report Templates';
+    protected static ?string $navigationLabel = 'Download Templates';
 
-    protected static ?string $title = 'Report Templates';
+    protected static ?string $title = 'Download Templates';
 
     protected static ?string $slug = 'available-templates';
 
     protected static string $view = 'filament.pages.report-templates';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_report::template')) ?? false;
+    }
 
     public function getHeaderActions(): array
     {
@@ -45,6 +52,20 @@ class ReportTemplates extends Page implements HasForms
                         ->maxLength(255)
                         ->placeholder('e.g. Monthly Attendance Report'),
 
+                    Forms\Components\Select::make('category')
+                        ->options(collect(\App\Models\ReportTemplate::CATEGORIES)
+                            ->mapWithKeys(fn (string $category): array => [$category => $category])
+                            ->all())
+                        ->default('Report Template')
+                        ->required()
+                        ->live(),
+
+                    Forms\Components\TextInput::make('link_url')
+                        ->label('Tracker Link (Google Sheet URL)')
+                        ->url()
+                        ->visible(fn (Forms\Get $get): bool => $get('category') === 'Trackers')
+                        ->required(fn (Forms\Get $get): bool => $get('category') === 'Trackers'),
+
                     Forms\Components\Select::make('file_type')
                         ->label('File Type')
                         ->options([
@@ -52,14 +73,14 @@ class ReportTemplates extends Page implements HasForms
                             'excel' => 'Excel Spreadsheet (.xlsx)',
                         ])
                         ->default('word')
-                        ->required(),
+                        ->required(fn (Forms\Get $get): bool => $get('category') !== 'Trackers'),
 
                     Forms\Components\FileUpload::make('file_path')
                         ->label('Template File')
                         ->disk('public')
                         ->directory('report-templates')
                         ->maxSize(10240)
-                        ->required()
+                        ->required(fn (Forms\Get $get): bool => $get('category') !== 'Trackers')
                         ->live(onBlur: true)
                         ->afterStateUpdated(function (Forms\Set $set, $state) {
                             if (! $state) {
@@ -84,13 +105,26 @@ class ReportTemplates extends Page implements HasForms
                 ])
                 ->action(function (array $data): void {
                     $disk = Storage::disk('public');
-                    $filePath = $data['file_path'];
-                    $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-                    if (! in_array($extension, ['doc', 'docx', 'xls', 'xlsx'])) {
+                    $isTracker = ($data['category'] ?? 'Report Template') === 'Trackers';
+                    $filePath = $data['file_path'] ?? null;
+
+                    if ($filePath) {
+                        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+                        if (! in_array($extension, ['doc', 'docx', 'xls', 'xlsx'])) {
+                            Notification::make()
+                                ->title('Invalid file type')
+                                ->body('Only Word (.doc, .docx) and Excel (.xls, .xlsx) files are accepted.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+                    } elseif (! $isTracker) {
                         Notification::make()
-                            ->title('Invalid file type')
-                            ->body('Only Word (.doc, .docx) and Excel (.xls, .xlsx) files are accepted.')
+                            ->title('Template file required')
+                            ->body('Upload a file or choose the Trackers category with a link.')
                             ->danger()
                             ->send();
 
@@ -99,10 +133,12 @@ class ReportTemplates extends Page implements HasForms
 
                     ReportTemplate::create([
                         'name' => $data['name'],
-                        'file_type' => $data['file_type'],
+                        'category' => $data['category'] ?? 'Report Template',
+                        'file_type' => $data['file_type'] ?? null,
                         'description' => $data['description'] ?? null,
                         'file_path' => $filePath,
-                        'file_size' => $disk->size($filePath),
+                        'link_url' => $data['link_url'] ?? null,
+                        'file_size' => $filePath && $disk->exists($filePath) ? $disk->size($filePath) : null,
                     ]);
 
                     Notification::make()
@@ -118,7 +154,12 @@ class ReportTemplates extends Page implements HasForms
     {
         $template = ReportTemplate::findOrFail($templateId);
 
-        if (Storage::disk('public')->exists($template->file_path)) {
+        abort_unless(
+            auth()->user()?->can('delete', $template) ?? false,
+            403
+        );
+
+        if ($template->file_path && Storage::disk('public')->exists($template->file_path)) {
             Storage::disk('public')->delete($template->file_path);
         }
 
@@ -132,7 +173,13 @@ class ReportTemplates extends Page implements HasForms
 
     public function getTemplates()
     {
-        return ReportTemplate::query()->latest()->get();
+        $user = auth()->user();
+
+        if (! $user) {
+            return collect();
+        }
+
+        return ReportTemplate::query()->visibleTo($user)->latest()->get();
     }
 
     public function isSuperAdmin(): bool

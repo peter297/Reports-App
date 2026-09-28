@@ -12,6 +12,8 @@ class ClassSize extends Model
     use HasFactory;
 
     protected $fillable = [
+        'year_session_id',
+        'term_id',
         'branch',
         'section',
         'class_id',
@@ -67,6 +69,16 @@ class ClassSize extends Model
     public function class(): BelongsTo
     {
         return $this->belongsTo(Classes::class, 'class_id');
+    }
+
+    public function yearSession(): BelongsTo
+    {
+        return $this->belongsTo(YearSession::class);
+    }
+
+    public function term(): BelongsTo
+    {
+        return $this->belongsTo(Term::class);
     }
 
     public function stream(): BelongsTo

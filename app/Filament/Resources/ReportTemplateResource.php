@@ -9,6 +9,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ReportTemplateResource extends Resource
@@ -19,11 +21,13 @@ class ReportTemplateResource extends Resource
 
     protected static ?string $navigationGroup = 'System Settings';
 
+    protected static ?string $navigationLabel = 'Manage Templates';
+
     protected static ?string $slug = 'report-templates';
 
     protected static ?string $modelLabel = 'Report Template';
 
-    protected static ?string $pluralModelLabel = 'Report Templates';
+    protected static ?string $pluralModelLabel = 'Manage Templates';
 
     public static function canViewAny(): bool
     {
@@ -69,17 +73,42 @@ class ReportTemplateResource extends Resource
                             ->maxLength(255)
                             ->placeholder('e.g. Monthly Attendance Report'),
 
+                        Forms\Components\Select::make('category')
+                            ->options(collect(\App\Models\ReportTemplate::CATEGORIES)
+                                ->mapWithKeys(fn (string $category): array => [$category => $category])
+                                ->all())
+                            ->default('Report Template')
+                            ->required()
+                            ->live(),
+
                         Forms\Components\Select::make('file_type')
                             ->options([
                                 'word' => 'Word Document (.docx)',
                                 'excel' => 'Excel Spreadsheet (.xlsx)',
                             ])
-                            ->required(),
+                            ->required(fn (Forms\Get $get): bool => $get('category') !== 'Trackers'),
 
                         Forms\Components\Textarea::make('description')
                             ->nullable()
                             ->rows(3)
                             ->placeholder('Brief description of this template...'),
+
+                        Forms\Components\TextInput::make('link_url')
+                            ->label('Tracker Link (Google Sheet URL)')
+                            ->url()
+                            ->visible(fn (Forms\Get $get): bool => $get('category') === 'Trackers')
+                            ->required(fn (Forms\Get $get): bool => $get('category') === 'Trackers')
+                            ->columnSpanFull(),
+
+                        Forms\Components\Select::make('roles')
+                            ->label('Visible To Roles (empty = everyone)')
+                            ->relationship('roles', 'name')
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->visible(fn (): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
+                            ->dehydrated(fn (): bool => auth()->user()?->hasUnrestrictedAccess() ?? false)
+                            ->columnSpanFull(),
                     ])->columns(2),
 
                 Forms\Components\Section::make('File Upload')
@@ -95,7 +124,7 @@ class ReportTemplateResource extends Resource
                                 'application/vnd.ms-excel',
                             ])
                             ->maxSize(10240) // 10MB
-                            ->required()
+                            ->required(fn (Forms\Get $get): bool => $get('category') !== 'Trackers')
                             ->downloadable()
                             ->openable()
                             ->previewable(false)
@@ -130,6 +159,22 @@ class ReportTemplateResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('category')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Trackers' => 'info',
+                        'MAL' => 'warning',
+                        default => 'gray',
+                    })
+                    ->sortable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->label('Visible To')
+                    ->badge()
+                    ->limitList(3)
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('file_type')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -162,6 +207,10 @@ class ReportTemplateResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('category')
+                    ->options(collect(\App\Models\ReportTemplate::CATEGORIES)
+                        ->mapWithKeys(fn (string $category): array => [$category => $category])
+                        ->all()),
                 Tables\Filters\SelectFilter::make('file_type')
                     ->options([
                         'word' => 'Word',
@@ -169,6 +218,12 @@ class ReportTemplateResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('openLink')
+                    ->label('Open Tracker')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (\App\Models\ReportTemplate $record): string => (string) $record->link_url)
+                    ->openUrlInNewTab()
+                    ->visible(fn (\App\Models\ReportTemplate $record): bool => filled($record->link_url)),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -177,6 +232,17 @@ class ReportTemplateResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return parent::getEloquentQuery()->whereKey(0);
+        }
+
+        return parent::getEloquentQuery()->visibleTo($user);
     }
 
     public static function getRelations(): array

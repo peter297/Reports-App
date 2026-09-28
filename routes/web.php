@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceReportController;
+use App\Http\Controllers\ClassSizeReportController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ReportController;
@@ -43,3 +44,4 @@ Route::get('/attendances/range/excel', [AttendanceReportController::class, 'exce
 Route::get('/attendances/selected/pdf', [AttendanceReportController::class, 'pdfByIds'])->name('attendances.report.selected.pdf')->middleware('auth');
 Route::get('/attendances/selected/excel', [AttendanceReportController::class, 'excelByIds'])->name('attendances.report.selected.excel')->middleware('auth');
 Route::get('/report-templates/{reportTemplate}/download', [ReportTemplateController::class, 'download'])->name('report-templates.download')->middleware('auth');
+Route::get('/class-sizes/{yearSession}/{term}/pdf', [ClassSizeReportController::class, 'pdf'])->name('class-sizes.report.pdf')->middleware('auth');

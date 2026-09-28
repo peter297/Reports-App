@@ -23,7 +23,21 @@ class ReportTemplatePolicy
      */
     public function view(User $user, ReportTemplate $reportTemplate): bool
     {
-        return $user->can('view_report::template');
+        if (! $user->can('view_report::template')) {
+            return false;
+        }
+
+        if ($user->hasUnrestrictedAccess()) {
+            return true;
+        }
+
+        if (! $reportTemplate->roles()->exists()) {
+            return true;
+        }
+
+        return $reportTemplate->roles()
+            ->whereIn('roles.id', $user->roles()->pluck('roles.id'))
+            ->exists();
     }
 
     /**

@@ -1,7 +1,3 @@
-use App\Models\SectionCoordinatorAssignment;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 <!DOCTYPE html>
 <html>
 <head>
@@ -106,6 +102,44 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
                 </tr>
             @endforeach
         </tbody>
+    </table>
+
+    <h3 style="color: #1f2937; font-size: 12px; margin: 20px 0 8px 0; border-bottom: 2px solid #1f2937; padding-bottom: 4px;">Totals by Section</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Section</th>
+                <th class="text-right">Boys</th>
+                <th class="text-right">Girls</th>
+                <th class="text-right">Total Learners</th>
+                <th class="text-right">Admitted</th>
+                <th class="text-right">Left</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($sectionTotals['sections'] as $sectionName => $figures)
+                <tr>
+                    <td class="font-bold">{{ $sectionName }}</td>
+                    <td class="text-right">{{ $figures['boys'] }}</td>
+                    <td class="text-right">{{ $figures['girls'] }}</td>
+                    <td class="text-right font-bold">{{ $figures['total'] }}</td>
+                    <td class="text-right success">{{ $figures['admitted'] }}</td>
+                    <td class="text-right danger">{{ $figures['left'] }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="6" style="text-align: center; color: #6b7280; font-style: italic;">No section data.</td></tr>
+            @endforelse
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td class="font-bold">Overall Total</td>
+                <td class="text-right font-bold">{{ $sectionTotals['overall']['boys'] }}</td>
+                <td class="text-right font-bold">{{ $sectionTotals['overall']['girls'] }}</td>
+                <td class="text-right font-bold">{{ $sectionTotals['overall']['total'] }}</td>
+                <td class="text-right success font-bold">{{ $sectionTotals['overall']['admitted'] }}</td>
+                <td class="text-right danger font-bold">{{ $sectionTotals['overall']['left'] }}</td>
+            </tr>
+        </tfoot>
     </table>
 </body>
 </html>

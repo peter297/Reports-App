@@ -73,6 +73,20 @@ class ClassSizeResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('year_session_id')
+                    ->label('Academic Year')
+                    ->relationship('yearSession', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->default(fn (): ?int => \App\Models\YearSession::active()?->id)
+                    ->required(),
+                Forms\Components\Select::make('term_id')
+                    ->label('Term')
+                    ->relationship('term', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->default(fn (): ?int => \App\Models\Term::active()?->id)
+                    ->required(),
                 Forms\Components\Select::make('branch')
                     ->options(function (): array {
                         $user = Auth::user();
@@ -169,6 +183,8 @@ class ClassSizeResource extends Resource
                                 }
 
                                 $exists = ClassSize::query()
+                                    ->where('year_session_id', $get('year_session_id'))
+                                    ->where('term_id', $get('term_id'))
                                     ->where('branch', $get('branch'))
                                     ->where('section', $get('section'))
                                     ->where('class_id', $get('class_id'))
@@ -177,7 +193,7 @@ class ClassSizeResource extends Resource
                                     ->exists();
 
                                 if ($exists) {
-                                    $fail('A size record already exists for this class and stream.');
+                                    $fail('A size record already exists for this class and stream in this year and term.');
                                 }
                             };
                         },
@@ -201,6 +217,12 @@ class ClassSizeResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('yearSession.name')
+                    ->label('Academic Year')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('term.name')
+                    ->label('Term')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('branch')
                     ->badge()
                     ->sortable()
@@ -234,6 +256,14 @@ class ClassSizeResource extends Resource
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('All classes')),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('year_session_id')
+                    ->label('Academic Year')
+                    ->relationship('yearSession', 'name')
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('term_id')
+                    ->label('Term')
+                    ->relationship('term', 'name')
+                    ->preload(),
                 Tables\Filters\SelectFilter::make('branch')
                     ->options([
                         'Juja Road' => 'Juja Road',
@@ -266,7 +296,7 @@ class ClassSizeResource extends Resource
         }
 
         return parent::getEloquentQuery()
-            ->with(['class', 'stream'])
+            ->with(['yearSession', 'term', 'class', 'stream'])
             ->accessibleTo($user);
     }
 

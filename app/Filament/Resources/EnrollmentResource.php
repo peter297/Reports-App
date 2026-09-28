@@ -79,7 +79,30 @@ class EnrollmentResource extends Resource
                             ->label('Class')
                             ->options(fn (): array => Classes::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state): void {
+                                $set('section', \App\Models\Enrollment::resolveSection(null, $state ? (int) $state : null));
+                            })
                             ->required(),
+                        Forms\Components\Select::make('section')
+                            ->label('Section')
+                            ->options(function (Forms\Get $get): array {
+                                $sections = \App\Models\Enrollment::sectionsForClass(
+                                    $get('class_id') ? (int) $get('class_id') : null
+                                );
+
+                                $options = array_combine($sections, $sections);
+
+                                return $options + [
+                                    'EYE' => 'EYE - Early Years Education',
+                                    'Upper Primary' => 'Upper Primary',
+                                    'Junior School' => 'Junior School',
+                                ];
+                            })
+                            ->searchable()
+                            ->default(function (Forms\Get $get): ?string {
+                                return \App\Models\Enrollment::resolveSection(null, $get('class_id') ? (int) $get('class_id') : null);
+                            }),
                         Forms\Components\TextInput::make('boys')
                             ->numeric()
                             ->minValue(0)
