@@ -35,7 +35,7 @@ class EnrollmentResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getEloquentQuery()->count();
+        return \App\Helpers\Utils::navigationBadge(static::class.':'.auth()->id(), fn (): int => static::getEloquentQuery()->count());
     }
 
     public static function form(Form $form): Form
@@ -219,7 +219,9 @@ class EnrollmentResource extends Resource
             return parent::getEloquentQuery()->whereKey(0);
         }
 
-        return parent::getEloquentQuery()->accessibleTo($user);
+        return parent::getEloquentQuery()
+            ->with(['yearSession', 'term'])
+            ->accessibleTo($user);
     }
 
     public static function getRelations(): array

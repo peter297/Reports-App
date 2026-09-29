@@ -30,7 +30,7 @@ class MaintenanceResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     public static function form(Form $form): Form

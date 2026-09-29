@@ -25,7 +25,7 @@ class WeekResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     protected static ?int $navigationSort = 3;
@@ -83,6 +83,11 @@ class WeekResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['term']);
     }
 
     public static function getRelations(): array

@@ -66,7 +66,7 @@ class ClassSizeResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getEloquentQuery()->count();
+        return \App\Helpers\Utils::navigationBadge(static::class.':'.auth()->id(), fn (): int => static::getEloquentQuery()->count());
     }
 
     public static function form(Form $form): Form

@@ -39,6 +39,11 @@ jobs:
         run: |
           php artisan filament:assets --ansi
 
+      - name: 6b. Cache Routes & Views (env-safe; config cache is built on the server, never here)
+        run: |
+          php artisan route:cache --ansi
+          php artisan view:cache --ansi
+
       - name: 7. Prepare Directory Keeps
         run: |
           mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs

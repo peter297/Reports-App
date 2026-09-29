@@ -20,7 +20,7 @@ class StreamResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     public static function form(Form $form): Form
@@ -105,6 +105,11 @@ class StreamResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['class']);
     }
 
     public static function getRelations(): array

@@ -3,15 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DisciplineResource\Pages;
-use App\Filament\Resources\DisciplineResource\RelationManagers;
 use App\Models\Discipline;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DisciplineResource extends Resource
 {
@@ -19,11 +16,11 @@ class DisciplineResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup= 'Academic Management';
+    protected static ?string $navigationGroup = 'Academic Management';
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     public static function form(Form $form): Form

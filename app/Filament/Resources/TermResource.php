@@ -24,7 +24,7 @@ class TermResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     public static function form(Form $form): Form
@@ -83,6 +83,11 @@ class TermResource extends Resource
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['year_session']);
     }
 
     public static function getRelations(): array

@@ -251,7 +251,9 @@ class ReportResource extends Resource
             return parent::getEloquentQuery()->whereKey(0);
         }
 
-        return parent::getEloquentQuery()->accessibleTo($user);
+        return parent::getEloquentQuery()
+            ->with(['user', 'recipients'])
+            ->accessibleTo($user);
     }
 
     public static function getRelations(): array

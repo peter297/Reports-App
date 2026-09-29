@@ -281,6 +281,11 @@ class EventResource extends Resource
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContent);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['term', 'week', 'classes']);
+    }
+
     public static function getRelations(): array
     {
         return [];

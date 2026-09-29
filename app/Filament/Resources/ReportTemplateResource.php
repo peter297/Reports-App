@@ -242,7 +242,9 @@ class ReportTemplateResource extends Resource
             return parent::getEloquentQuery()->whereKey(0);
         }
 
-        return parent::getEloquentQuery()->visibleTo($user);
+        return parent::getEloquentQuery()
+            ->with(['roles'])
+            ->visibleTo($user);
     }
 
     public static function getRelations(): array

@@ -145,6 +145,11 @@ class ItemRequestResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['department', 'year_session', 'term', 'week', 'user', 'recipients']);
+    }
+
     public static function getRelations(): array
     {
         return [];

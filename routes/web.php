@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcademicAnalysisReportController;
 use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\ClassSizeReportController;
 use App\Http\Controllers\EnrollmentController;
@@ -45,3 +46,10 @@ Route::get('/attendances/selected/pdf', [AttendanceReportController::class, 'pdf
 Route::get('/attendances/selected/excel', [AttendanceReportController::class, 'excelByIds'])->name('attendances.report.selected.excel')->middleware('auth');
 Route::get('/report-templates/{reportTemplate}/download', [ReportTemplateController::class, 'download'])->name('report-templates.download')->middleware('auth');
 Route::get('/class-sizes/{yearSession}/{term}/pdf', [ClassSizeReportController::class, 'pdf'])->name('class-sizes.report.pdf')->middleware('auth');
+Route::get('/academic-analysis/{analysis}/pdf', [AcademicAnalysisReportController::class, 'pdf'])->name('academic-analysis.pdf')->middleware('auth');
+Route::get('/academic-analysis/{analysis}/excel', [AcademicAnalysisReportController::class, 'excel'])->name('academic-analysis.excel')->middleware('auth');
+Route::get('/academic-analysis/section/{yearSession}/{term}/{exam}/{branch}/{section}/pdf', [AcademicAnalysisReportController::class, 'sectionPdf'])->name('academic-analysis.section.pdf')->middleware('auth');
+Route::get('/academic-analysis/section/{yearSession}/{term}/{exam}/{branch}/{section}/excel', [AcademicAnalysisReportController::class, 'sectionExcel'])->name('academic-analysis.section.excel')->middleware('auth');
+Route::get('/academic-analysis/year/{yearSession}/{branch}/{section}/pdf', [AcademicAnalysisReportController::class, 'yearPdf'])->name('academic-analysis.year.pdf')->middleware('auth');
+Route::get('/academic-analysis/year/{yearSession}/{branch}/{section}/excel', [AcademicAnalysisReportController::class, 'yearExcel'])->name('academic-analysis.year.excel')->middleware('auth');
+Route::get('/academic-analysis/schools/{yearSession}/pdf', [AcademicAnalysisReportController::class, 'schoolsPdf'])->name('academic-analysis.schools.pdf')->middleware('auth');

@@ -134,6 +134,20 @@ class User extends Authenticatable implements FilamentUser
         ]);
     }
 
+    public const DEPUTY_ROLES = ['Deputy HeadTeacher', 'Deputy Principal'];
+
+    public const HEAD_ROLES = ['HeadTeacher', 'Principal', 'CEO'];
+
+    public function isDeputy(): bool
+    {
+        return $this->hasAnyRole(self::DEPUTY_ROLES);
+    }
+
+    public function isHead(): bool
+    {
+        return $this->hasAnyRole(self::HEAD_ROLES);
+    }
+
     protected static function booted(): void
     {
         static::created(function (User $user) {
