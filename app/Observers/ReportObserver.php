@@ -44,6 +44,15 @@ class ReportObserver
             return $reportPdf;
         }
 
+        // Imagick is an optional PHP extension used to merge attached PDFs.
+        // If it is not available in the current environment (common in production),
+        // skip merging instead of crashing with a 500 error.
+        if (! class_exists(\Imagick::class)) {
+            \Log::warning('Imagick extension not available; skipping PDF attachment merge for report '.$report->id);
+
+            return $reportPdf;
+        }
+
         $mergedPdf = new \Imagick();
         $mergedPdf->readImageBlob($reportPdf);
 

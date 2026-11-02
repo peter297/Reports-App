@@ -386,7 +386,7 @@ class AcademicAnalysisReportController extends Controller
      */
     private function streamExcel(string $title, array $tables, string $filename): StreamedResponse
     {
-        return response()->streamDownload(function () use ($title, $tables): void {
+        return response()->streamDownload(function () use ($title, $tables, $filename): void {
             $writer = new XlsxWriter;
             $writer->openToBrowser($filename);
 
