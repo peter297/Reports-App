@@ -2,7 +2,10 @@
 
 return [
     'shield_resource' => [
-        'should_register_navigation' => true,
+        // Hidden: the app uses its own Roles & Permissions (System Settings)
+        // and its own permission catalog. Shield's generic resource would edit
+        // the unused shield-convention permission names only.
+        'should_register_navigation' => false,
         'slug' => 'shield/roles',
         'navigation_sort' => -1,
         'navigation_badge' => true,

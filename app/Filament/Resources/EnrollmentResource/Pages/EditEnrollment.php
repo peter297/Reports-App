@@ -12,8 +12,9 @@ class EditEnrollment extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (! auth()->user()?->hasUnrestrictedAccess()) {
-            $data['branch'] = auth()->user()?->branch;
+        $user = auth()->user();
+        if (! $user?->hasUnrestrictedAccess() && ($branchName = $user?->branch?->name)) {
+            $data['branch'] = $branchName;
         }
 
         $data['class_breakdown'] = array_map(

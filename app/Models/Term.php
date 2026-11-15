@@ -14,30 +14,27 @@ class Term extends Model
     protected $fillable = [
         'year_session_id',
         'name',
-        'is_active',
-
+        'start_date',
+        'end_date',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
     }
 
-    public function year_session(): BelongsTo
+    public function yearSession(): BelongsTo
     {
         return $this->belongsTo(YearSession::class);
     }
 
     public function weeks(): HasMany
     {
-        return $this->hasMany(Week::class);
-    }
-
-    public function events(): HasMany
-    {
-        return $this->hasMany(Event::class);
+        return $this->hasMany(Week::class)->orderBy('number')->orderBy('start_date')->orderBy('id');
     }
 
     public function attendances(): HasMany
@@ -45,15 +42,22 @@ class Term extends Model
         return $this->hasMany(Attendance::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
-    public function scopeActive($query)
+    public function events(): HasMany
     {
-        return $query->where('is_active', true);
+        return $this->hasMany(Event::class);
     }
 
-    public static function active(): ?self
+    public function syllabusMappings(): HasMany
+    {
+        return $this->hasMany(SyllabusMapping::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public static function active(): ?static
     {
         return static::query()->active()->latest('id')->first();
     }
@@ -61,23 +65,12 @@ class Term extends Model
     protected static function booted(): void
     {
         static::saving(function (Term $term): void {
-            if ($term->is_active) {
+            if ($term->status === 'active') {
                 static::query()
+                    ->where('year_session_id', $term->year_session_id)
                     ->whereKeyNot($term->getKey())
-                    ->where('is_active', true)
-                    ->update(['is_active' => false]);
-
-                if ($term->year_session_id) {
-                    YearSession::query()
-                        ->whereKey($term->year_session_id)
-                        ->where('is_active', false)
-                        ->update(['is_active' => true]);
-
-                    YearSession::query()
-                        ->whereKeyNot($term->year_session_id)
-                        ->where('is_active', true)
-                        ->update(['is_active' => false]);
-                }
+                    ->where('status', 'active')
+                    ->update(['status' => 'completed']);
             }
         });
     }

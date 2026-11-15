@@ -55,7 +55,16 @@ class Enrollment extends Model
             return $query;
         }
 
-        return $query->where('branch', $user->branch);
+        // Enrollments store the branch name (legacy); resolve the user's branch FK to a name.
+        $branchName = $user->branch_id
+            ? \App\Models\Branch::whereKey($user->branch_id)->value('name')
+            : null;
+
+        if ($branchName === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('branch', $branchName);
     }
 
     public function getClassBreakdownSummaryAttribute(): string

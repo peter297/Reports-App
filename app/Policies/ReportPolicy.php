@@ -10,117 +10,66 @@ class ReportPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_report');
+        return $user->can('reports.module.view');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Report $report): bool
     {
-        if (! $user->can('view_report')) {
-            return false;
-        }
-
-        if ($user->hasUnrestrictedAccess()) {
-            return true;
-        }
-
-        return $report->user_id === $user->id
+        return $user->can('reports.view_all')
+            || $user->id === $report->user_id
             || $report->recipients()->where('users.id', $user->id)->exists()
-            || $report->user?->line_manager_id === $user->id;
+            || $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return $user->can('create_report');
+        return $user->can('reports.create');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
     public function update(User $user, Report $report): bool
     {
-        if (! $user->can('update_report')) {
-            return false;
-        }
-
-        return $user->hasUnrestrictedAccess() || $report->user_id === $user->id;
+        return $user->can('reports.create') && $report->isEditableBy($user);
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Report $report): bool
     {
-        if (! $user->can('delete_report')) {
-            return false;
-        }
-
-        return $user->hasUnrestrictedAccess() || $report->user_id === $user->id;
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can bulk delete.
-     */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_report');
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can permanently delete.
-     */
     public function forceDelete(User $user, Report $report): bool
     {
-        return $user->can('force_delete_report');
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_report');
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can restore.
-     */
     public function restore(User $user, Report $report): bool
     {
-        return $user->can('restore_report');
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can bulk restore.
-     */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_report');
+        return $user->isSuperAdmin();
     }
 
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Report $report): bool
+    public function replicate(User $user): bool
     {
-        return $user->can('replicate_report');
+        return false;
     }
 
-    /**
-     * Determine whether the user can reorder.
-     */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_report');
+        return $user->isSuperAdmin();
     }
 }

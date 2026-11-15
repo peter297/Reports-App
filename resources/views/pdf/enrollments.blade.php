@@ -1,7 +1,3 @@
-use App\Models\SectionCoordinatorAssignment;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 <!DOCTYPE html>
 <html>
 <head>

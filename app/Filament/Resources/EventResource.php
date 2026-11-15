@@ -23,14 +23,29 @@ use Filament\Tables\Columns\BooleanColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 
 class EventResource extends Resource
 {
     protected static ?string $model = Event::class;
 
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return parent::getEloquentQuery()->whereKey(0);
+        }
+
+        return parent::getEloquentQuery()->accessibleTo($user);
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationGroup = 'Events';
 
     public static function form(Form $form): Form
     {
@@ -250,7 +265,8 @@ class EventResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('events.manage') ?? false),
                     Tables\Actions\ViewAction::make(),
                     Action::make('previewCalendar')
                         ->label('Preview Calendar')
@@ -258,12 +274,14 @@ class EventResource extends Resource
                         ->url(fn (Event $record): string => route('events.calendar', $record))
                         ->openUrlInNewTab()
                         ->visible(fn (Event $record): bool => filled($record->calendar_path)),
-                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('events.manage') ?? false),
                 ])->icon('heroicon-o-ellipsis-vertical'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('events.manage') ?? false),
                     Tables\Actions\BulkAction::make('Export')
                         ->icon('heroicon-m-arrow-down-tray')
                         ->openUrlInNewTab()
@@ -292,6 +310,7 @@ class EventResource extends Resource
             'index' => Pages\ListEvents::route('/'),
             'create' => Pages\CreateEvent::route('/create'),
             'edit' => Pages\EditEvent::route('/{record}/edit'),
+            'quotes' => Pages\MonthQuotes::route('/month-quotes'),
         ];
     }
 }

@@ -12,42 +12,57 @@ class YearSession extends Model
 
     protected $fillable = [
         'name',
-        'is_active',
+        'start_date',
+        'end_date',
+        'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
     }
 
     public function terms(): HasMany
     {
-        return $this->hasMany(Term::class);
+        return $this->hasMany(Term::class)->orderBy('start_date')->orderBy('id');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
+    public function subjectAssignments(): HasMany
+    {
+        return $this->hasMany(SubjectAssignment::class);
+    }
+
+    public function syllabusMappings(): HasMany
+    {
+        return $this->hasMany(SyllabusMapping::class);
+    }
+
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 
-    public static function active(): ?self
+    public static function active(): ?static
     {
         return static::query()->active()->latest('id')->first();
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderByDesc('start_date')->orderByDesc('id');
     }
 
     protected static function booted(): void
     {
         static::saving(function (YearSession $session): void {
-            if ($session->is_active) {
+            if ($session->status === 'active') {
                 static::query()
                     ->whereKeyNot($session->getKey())
-                    ->where('is_active', true)
-                    ->update(['is_active' => false]);
+                    ->where('status', 'active')
+                    ->update(['status' => 'archived']);
             }
         });
     }

@@ -20,8 +20,9 @@ class SuperAdminSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => 'password123!',
-                'branch' => null,
+                'branch_id' => null,
                 'line_manager_id' => null,
+                'is_active' => true,
             ],
         );
 

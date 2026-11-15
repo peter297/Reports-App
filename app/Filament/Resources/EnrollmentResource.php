@@ -25,7 +25,7 @@ class EnrollmentResource extends Resource
     {
         $user = auth()->user();
 
-        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_enrollment')) ?? false;
+        return ($user?->can('enrollments.view') || $user?->can('enrollments.manage')) ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -48,7 +48,7 @@ class EnrollmentResource extends Resource
                         'Kitisuru' => 'Kitisuru',
                         'South C' => 'South C',
                     ])
-                    ->default(fn (): ?string => auth()->user()?->branch)
+                    ->default(fn (): ?string => auth()->user()?->branch?->name)
                     ->disabled(fn (): bool => ! (auth()->user()?->hasUnrestrictedAccess() ?? false))
                     ->dehydrated()
                     ->required(),
@@ -179,11 +179,13 @@ class EnrollmentResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('enrollments.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('enrollments.manage') ?? false),
                 ]),
             ]);
     }

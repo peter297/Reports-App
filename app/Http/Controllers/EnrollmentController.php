@@ -20,7 +20,7 @@ class EnrollmentController extends Controller
     public function pdf(): Response
     {
         $user = auth()->user();
-        abort_unless($user?->hasUnrestrictedAccess() || $user?->can('view_any_enrollment'), 403);
+        abort_unless($user?->can('enrollments.view') || $user?->can('enrollments.manage'), 403);
 
         $classNames = Classes::query()->pluck('name', 'id');
 
@@ -51,7 +51,7 @@ class EnrollmentController extends Controller
     public function excel(): StreamedResponse
     {
         $user = auth()->user();
-        abort_unless($user?->hasUnrestrictedAccess() || $user?->can('view_any_enrollment'), 403);
+        abort_unless($user?->can('enrollments.view') || $user?->can('enrollments.manage'), 403);
 
         $enrollments = Enrollment::query()
             ->accessibleTo($user)

@@ -18,7 +18,7 @@ class BillingResource extends Resource
     {
         $user = auth()->user();
 
-        return ($user?->hasUnrestrictedAccess() || $user?->can('view_any_billing')) ?? false;
+        return $user?->can('billings.view') ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -82,11 +82,13 @@ class BillingResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('billings.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('billings.manage') ?? false),
                 ]),
             ]);
     }

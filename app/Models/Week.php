@@ -13,18 +13,24 @@ class Week extends Model
 
     protected $fillable = [
         'term_id',
+        'number',
         'name',
         'start_date',
         'end_date',
-
     ];
 
     protected function casts(): array
     {
         return [
+            'number' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    protected function getResolvedEndDateAttribute(): ?\Carbon\Carbon
+    {
+        return $this->resolvedEndDate();
     }
 
     public function term(): BelongsTo
@@ -37,39 +43,32 @@ class Week extends Model
         return $this->hasMany(Attendance::class);
     }
 
-    public function events()
+    public function events(): HasMany
     {
         return $this->hasMany(Event::class);
-    }
-
-    /**
-     * End date with fallback: weeks run Monday to Friday, so a missing
-     * end date means Friday (start date + 4 days).
-     */
-    public function getResolvedEndDateAttribute(): ?\Carbon\Carbon
-    {
-        if ($this->end_date) {
-            return $this->end_date;
-        }
-
-        return $this->start_date ? $this->start_date->copy()->addDays(4) : null;
     }
 
     public function containsDate(mixed $date): bool
     {
         $day = static::parseDay($date);
 
-        if (! $day || ! $this->start_date || ! $this->resolved_end_date) {
+        if (! $day || ! $this->start_date || ! $this->end_date) {
             return false;
         }
 
         return $this->start_date->toDateString() <= $day
-            && $day <= $this->resolved_end_date->toDateString();
+            && $day <= $this->end_date->toDateString();
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
+    public function resolvedEndDate(): ?\Carbon\Carbon
+    {
+        if ($this->end_date) {
+            return $this->end_date;
+        }
+
+        return $this->start_date?->copy()->addDays(4);
+    }
+
     public function scopeContaining($query, mixed $date)
     {
         $day = static::parseDay($date);
@@ -78,11 +77,7 @@ class Week extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereDate('start_date', '<=', $day)
-            ->where(function ($query) use ($day): void {
-                $query->whereDate('end_date', '>=', $day)
-                    ->orWhereNull('end_date');
-            });
+        return $query->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day);
     }
 
     public static function forDate(mixed $date, ?int $termId = null): ?self

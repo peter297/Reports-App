@@ -13,17 +13,18 @@ class Stream extends Model
     protected $fillable = [
         'class_id',
         'name',
-        'branch',
-        'section',
+        'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function class(): BelongsTo
     {
         return $this->belongsTo(Classes::class, 'class_id');
-    }
-
-    public function attendances(): HasMany
-    {
-        return $this->hasMany(Attendance::class);
     }
 }

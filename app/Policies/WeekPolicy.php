@@ -3,106 +3,69 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Week;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class WeekPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_week');
+        return $user->can('sessions.view');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Week $week): bool
+    public function view(User $user, Week $model): bool
     {
-        return $user->can('view_week');
+        return $user->can('sessions.view');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return $user->can('create_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Week $week): bool
+    public function update(User $user, Week $model): bool
     {
-        return $user->can('update_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Week $week): bool
+    public function delete(User $user, Week $model): bool
     {
-        return $user->can('delete_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can bulk delete.
-     */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can permanently delete.
-     */
-    public function forceDelete(User $user, Week $week): bool
+    public function forceDelete(User $user, Week $model): bool
     {
-        return $user->can('force_delete_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can restore.
-     */
-    public function restore(User $user, Week $week): bool
+    public function restore(User $user, Week $model): bool
     {
-        return $user->can('restore_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can bulk restore.
-     */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Week $week): bool
+    public function replicate(User $user): bool
     {
-        return $user->can('replicate_week');
+        return $user->can('sessions.manage');
     }
 
-    /**
-     * Determine whether the user can reorder.
-     */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_week');
+        return $user->can('sessions.manage');
     }
 }

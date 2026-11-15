@@ -19,9 +19,11 @@ class ClassSizeResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calculator';
 
-    protected static ?string $navigationGroup = 'Academic Management';
+    protected static ?string $navigationGroup = 'Attendance';
 
     protected static ?string $navigationLabel = 'Class Sizes';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $modelLabel = 'Class Size';
 
@@ -29,34 +31,28 @@ class ClassSizeResource extends Resource
     {
         $user = Auth::user();
 
-        return ($user?->hasUnrestrictedAccess()
-            || $user?->can('view_any_class::size')
-            || ($user?->hasRole('Coordinators') && $user?->sectionCoordinatorAssignments()->exists()))
-            ?? false;
+        return $user?->can('attendance.view') ?? false;
     }
 
     public static function canCreate(): bool
     {
         $user = Auth::user();
 
-        return ($user?->hasUnrestrictedAccess()
-            || $user?->can('create_class::size')
-            || ($user?->hasRole('Coordinators') && $user?->sectionCoordinatorAssignments()->exists()))
-            ?? false;
+        return $user?->can('attendances.manage') ?? false;
     }
 
     public static function canEdit(Model $record): bool
     {
         $user = Auth::user();
 
-        return ($user?->hasUnrestrictedAccess() || $user?->can('update_class::size')) ?? false;
+        return $user?->can('attendances.manage') ?? false;
     }
 
     public static function canDelete(Model $record): bool
     {
         $user = Auth::user();
 
-        return ($user?->hasUnrestrictedAccess() || $user?->can('delete_class::size')) ?? false;
+        return $user?->can('attendances.manage') ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -76,16 +72,7 @@ class ClassSizeResource extends Resource
                 Forms\Components\Select::make('branch')
                     ->options(function (): array {
                         $user = Auth::user();
-
-                        if ($user?->hasUnrestrictedAccess()) {
-                            return [
-                                'Juja Road' => 'Juja Road',
-                                'Kitisuru' => 'Kitisuru',
-                                'South C' => 'South C',
-                            ];
-                        }
-
-                        $branches = $user?->coordinatedBranches() ?? [];
+                        $branches = $user?->assignableBranchNames() ?? [];
 
                         return array_combine($branches, $branches);
                     })
@@ -93,10 +80,12 @@ class ClassSizeResource extends Resource
                         $user = Auth::user();
 
                         if ($user?->hasUnrestrictedAccess()) {
-                            return $user?->branch;
+                            return $user?->branch?->name;
                         }
 
-                        return $user?->sectionCoordinatorAssignments()->first()?->branch;
+                        $branches = $user?->assignableBranchNames() ?? [];
+
+                        return count($branches) === 1 ? $branches[0] : null;
                     })
                     ->disabled(function (): bool {
                         $user = Auth::user();
@@ -105,7 +94,7 @@ class ClassSizeResource extends Resource
                             return false;
                         }
 
-                        return count($user?->coordinatedBranches() ?? []) <= 1;
+                        return count($user?->assignableBranchNames() ?? []) <= 1;
                     })
                     ->live()
                     ->afterStateUpdated(function (Forms\Set $set): void {
@@ -116,25 +105,7 @@ class ClassSizeResource extends Resource
                     ->required()
                     ->dehydrated(),
                 Forms\Components\Select::make('section')
-                    ->options(function (Forms\Get $get): array {
-                        $user = Auth::user();
-
-                        if ($user?->hasUnrestrictedAccess()) {
-                            return [
-                                'EYE' => 'EYE - Early Years Education',
-                                'Upper Primary' => 'Upper Primary',
-                                'Junior School' => 'Junior School',
-                            ];
-                        }
-
-                        $assignments = $user?->sectionCoordinatorAssignments();
-
-                        if ($branch = $get('branch')) {
-                            $assignments = $assignments?->where('branch', $branch);
-                        }
-
-                        return $assignments?->pluck('section', 'section')->all() ?? [];
-                    })
+                    ->options(fn (Forms\Get $get): array => Auth::user()?->assignableSectionCodes($get('branch')) ?? [])
                     ->live()
                     ->afterStateUpdated(function (Forms\Set $set): void {
                         $set('class_id', null);
@@ -248,11 +219,13 @@ class ClassSizeResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('attendances.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('attendances.manage') ?? false),
                 ]),
             ]);
     }

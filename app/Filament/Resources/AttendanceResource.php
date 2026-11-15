@@ -19,15 +19,18 @@ class AttendanceResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $navigationGroup = 'Academic Management';
+    protected static ?string $navigationGroup = 'Attendance';
+
+    protected static ?int $navigationSort = 1;
 
     public static function canViewAny(): bool
     {
         $user = Auth::user();
 
         return $user?->hasUnrestrictedAccess()
-            || $user?->can('view_any_attendance')
-            || ($user?->hasRole('Coordinators') && $user?->sectionCoordinatorAssignments()->exists())
+            || $user?->hasRole('Deputy Head Teacher')
+            || $user?->hasSyllabusCoordinatorScope()
+            || $user?->can('attendance.view')
             ?? false;
     }
 
@@ -150,16 +153,7 @@ class AttendanceResource extends Resource
                         Forms\Components\Select::make('branch')
                             ->options(function (): array {
                                 $user = Auth::user();
-
-                                if ($user?->hasUnrestrictedAccess()) {
-                                    return [
-                                        'Juja Road' => 'Juja Road',
-                                        'Kitisuru' => 'Kitisuru',
-                                        'South C' => 'South C',
-                                    ];
-                                }
-
-                                $branches = $user?->coordinatedBranches() ?? [];
+                                $branches = $user?->assignableBranchNames() ?? [];
 
                                 return array_combine($branches, $branches);
                             })
@@ -167,10 +161,12 @@ class AttendanceResource extends Resource
                                 $user = Auth::user();
 
                                 if ($user?->hasUnrestrictedAccess()) {
-                                    return $user?->branch;
+                                    return $user?->branch?->name;
                                 }
 
-                                return $user?->sectionCoordinatorAssignments()->first()?->branch;
+                                $branches = $user?->assignableBranchNames() ?? [];
+
+                                return count($branches) === 1 ? $branches[0] : null;
                             })
                             ->disabled(function (): bool {
                                 $user = Auth::user();
@@ -179,7 +175,7 @@ class AttendanceResource extends Resource
                                     return false;
                                 }
 
-                                return count($user?->coordinatedBranches() ?? []) <= 1;
+                                return count($user?->assignableBranchNames() ?? []) <= 1;
                             })
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set): void {
@@ -190,25 +186,7 @@ class AttendanceResource extends Resource
                             ->required()
                             ->dehydrated(),
                         Forms\Components\Select::make('section')
-                            ->options(function (Forms\Get $get): array {
-                                $user = Auth::user();
-
-                                if ($user?->hasUnrestrictedAccess()) {
-                                    return [
-                                        'EYE' => 'EYE - Early Years Education',
-                                        'Upper Primary' => 'Upper Primary',
-                                        'Junior School' => 'Junior School',
-                                    ];
-                                }
-
-                                $assignments = $user?->sectionCoordinatorAssignments();
-
-                                if ($branch = $get('branch')) {
-                                    $assignments = $assignments?->where('branch', $branch);
-                                }
-
-                                return $assignments?->pluck('section', 'section')->all() ?? [];
-                            })
+                            ->options(fn (Forms\Get $get): array => Auth::user()?->assignableSectionCodes($get('branch')) ?? [])
                             ->default(function (): ?string {
                                 $user = Auth::user();
 
@@ -216,7 +194,9 @@ class AttendanceResource extends Resource
                                     return null;
                                 }
 
-                                return $user?->sectionCoordinatorAssignments()->first()?->section;
+                                $options = $user?->assignableSectionCodes(null) ?? [];
+
+                                return count($options) === 1 ? array_key_first($options) : null;
                             })
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set): void {
@@ -840,11 +820,13 @@ class AttendanceResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('attendances.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('attendances.manage') ?? false),
                     Tables\Actions\BulkAction::make('downloadSelectedPdf')
                         ->label('Download Selected PDF')
                         ->icon('heroicon-o-document-arrow-down')
@@ -946,92 +928,85 @@ class AttendanceResource extends Resource
         static::recalculateFromAbsent($set, $get, $withPercentages);
     }
 
+    /**
+     * Constrain a classes (or relation-to-classes) query to branches/levels the
+     * user may access. $section is a stored section code ('EYE', 'Upper Primary',
+     * 'Junior School'). Pass $through = 'class' to constrain a Streams query.
+     */
+    private static function applyAcademicScope(\Illuminate\Database\Eloquent\Builder $query, ?string $branch, ?string $section, $user, ?string $through = null): \Illuminate\Database\Eloquent\Builder
+    {
+        $levelName = $section ? \App\Support\AcademicSections::canonical($section) : null;
+        $branchRel = $through ? $through . '.branch' : 'branch';
+        $levelRel = $through ? $through . '.academicLevel' : 'academicLevel';
+
+        if ($user?->hasUnrestrictedAccess()) {
+            return $query
+                ->when($branch, fn ($q) => $q->whereHas($branchRel, fn ($b) => $b->where('name', $branch)))
+                ->when($levelName, fn ($q) => $q->whereHas($levelRel, fn ($b) => $b->where('name', $levelName)));
+        }
+
+        if ($user?->hasRole('Deputy Head Teacher')) {
+            $dhtBranch = $user->branch?->name;
+
+            if (! $dhtBranch) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query
+                ->whereHas($branchRel, fn ($q) => $q->where('name', $dhtBranch))
+                ->when($levelName, fn ($q) => $q->whereHas($levelRel, fn ($b) => $b->where('name', $levelName)));
+        }
+
+        $assignments = $user?->activeCoordinatorAssignments()->with('branch', 'academicLevel')->get() ?? collect();
+
+        $pairs = $assignments
+            ->map(fn ($assignment) => [$assignment->branch?->name, $assignment->academicLevel?->name])
+            ->filter(fn ($pair) => $pair[0] && $pair[1])
+            ->filter(fn ($pair) => $branch === null || $pair[0] === $branch)
+            ->filter(fn ($pair) => $levelName === null || $pair[1] === $levelName)
+            ->values();
+
+        if ($pairs->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (\Illuminate\Database\Eloquent\Builder $query) use ($pairs, $branchRel, $levelRel): void {
+            foreach ($pairs as [$branchName, $levelName]) {
+                $query->orWhere(function (\Illuminate\Database\Eloquent\Builder $query) use ($branchName, $levelName, $branchRel, $levelRel): void {
+                    $query->whereHas($branchRel, fn ($q) => $q->where('name', $branchName))
+                        ->whereHas($levelRel, fn ($q) => $q->where('name', $levelName));
+                });
+            }
+        });
+    }
+
     public static function attendanceClassOptions(?string $branch, ?string $section): array
     {
         $user = Auth::user();
-        $query = \App\Models\Classes::query()->orderBy('name');
 
-        if ($user?->hasUnrestrictedAccess()) {
-            if ($branch) {
-                $query->where('branch', $branch);
-            }
-
-            return $query->pluck('name', 'id')->all();
-        }
-
-        $assignments = $user?->sectionCoordinatorAssignments ?? collect();
-
-        if ($assignments->isEmpty()) {
+        if (! $user) {
             return [];
         }
 
-        $classIds = \App\Models\Stream::query()
-            ->when($branch && $section,
-                fn ($query): mixed => $query->where('branch', $branch)->where('section', $section),
-                fn ($query): mixed => $query->where(function ($query) use ($assignments, $branch): void {
-                    foreach ($assignments as $assignment) {
-                        if ($branch && $assignment->branch !== $branch) {
-                            continue;
-                        }
+        $query = \App\Models\Classes::query()->with(['branch', 'academicLevel'])->orderBy('name');
 
-                        $query->orWhere(function ($query) use ($assignment): void {
-                            $query->where('branch', $assignment->branch)
-                                ->where('section', $assignment->section);
-                        });
-                    }
-                }))
-            ->distinct()
-            ->pluck('class_id');
-
-        if ($classIds->isEmpty()) {
-            return [];
-        }
-
-        return $query->whereIn('id', $classIds)->pluck('name', 'id')->all();
+        return static::applyAcademicScope($query, $branch, $section, $user)->pluck('name', 'id')->all();
     }
 
     public static function attendanceStreamOptions(?string $branch, ?string $section, ?int $classId): array
     {
         $user = Auth::user();
-        $query = \App\Models\Stream::query()->orderBy('name');
 
-        if ($user?->hasUnrestrictedAccess()) {
-            return $query
-                ->when($branch, fn ($query): mixed => $query->where('branch', $branch))
-                ->when($section, fn ($query): mixed => $query->where('section', $section))
-                ->when($classId, fn ($query): mixed => $query->where('class_id', $classId))
-                ->pluck('name', 'id')
-                ->all();
-        }
-
-        $assignments = $user?->sectionCoordinatorAssignments ?? collect();
-
-        if ($assignments->isEmpty()) {
+        if (! $user) {
             return [];
         }
 
-        if ($branch && $section) {
-            $query->where('branch', $branch)->where('section', $section);
-        } else {
-            $query->where(function ($query) use ($assignments, $branch): void {
-                foreach ($assignments as $assignment) {
-                    if ($branch && $assignment->branch !== $branch) {
-                        continue;
-                    }
+        $query = \App\Models\Stream::query()->with('class.branch', 'class.academicLevel')->orderBy('name');
 
-                    $query->orWhere(function ($query) use ($assignment): void {
-                        $query->where('branch', $assignment->branch)
-                            ->where('section', $assignment->section);
-                    });
-                }
-            });
-        }
-
-        if ($classId) {
-            $query->where('class_id', $classId);
-        }
-
-        return $query->pluck('name', 'id')->all();
+        return static::applyAcademicScope($query, $branch, $section, $user, 'class')
+            ->when($classId, fn ($query): mixed => $query->where('streams.class_id', $classId))
+            ->pluck('name', 'id')
+            ->all();
     }
 
     public static function getEloquentQuery(): Builder

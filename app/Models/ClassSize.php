@@ -48,7 +48,15 @@ class ClassSize extends Model
             return $query;
         }
 
-        $assignments = $user->sectionCoordinatorAssignments;
+        if ($user->hasRole('Deputy Head Teacher') && $user->branch_id) {
+            $branchName = \App\Models\Branch::whereKey($user->branch_id)->value('name');
+
+            if ($branchName) {
+                return $query->where('branch', $branchName);
+            }
+        }
+
+        $assignments = $user->activeCoordinatorAssignments()->with('branch', 'academicLevel')->get();
 
         if ($assignments->isEmpty()) {
             return $query->whereKey(0);
@@ -56,9 +64,16 @@ class ClassSize extends Model
 
         return $query->where(function (Builder $query) use ($assignments): void {
             foreach ($assignments as $assignment) {
-                $query->orWhere(function (Builder $query) use ($assignment): void {
-                    $query->where('branch', $assignment->branch)
-                        ->where('section', $assignment->section);
+                $branchName = $assignment->branch?->name;
+                $levelName = $assignment->academicLevel?->name;
+                $aliases = $levelName ? \App\Support\AcademicSections::aliases($levelName) : [];
+
+                if (! $branchName || $aliases === []) {
+                    continue;
+                }
+
+                $query->orWhere(function (Builder $query) use ($branchName, $aliases): void {
+                    $query->where('branch', $branchName)->whereIn('section', $aliases);
                 });
             }
         });

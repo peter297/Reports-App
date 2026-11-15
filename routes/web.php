@@ -4,7 +4,7 @@ use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ReportTemplateController;
+use App\Http\Controllers\SyllabusReportController;
 use Illuminate\Support\Facades\Route;
 
 // Route::get('/', function () {
@@ -42,4 +42,7 @@ Route::get('/attendances/range/pdf', [AttendanceReportController::class, 'pdfByD
 Route::get('/attendances/range/excel', [AttendanceReportController::class, 'excelByDate'])->name('attendances.report.range.excel')->middleware('auth');
 Route::get('/attendances/selected/pdf', [AttendanceReportController::class, 'pdfByIds'])->name('attendances.report.selected.pdf')->middleware('auth');
 Route::get('/attendances/selected/excel', [AttendanceReportController::class, 'excelByIds'])->name('attendances.report.selected.excel')->middleware('auth');
-Route::get('/report-templates/{reportTemplate}/download', [ReportTemplateController::class, 'download'])->name('report-templates.download')->middleware('auth');
+Route::get('/syllabus/reports/mapping/{mapping}/pdf', [SyllabusReportController::class, 'mappingPdf'])->name('syllabus.reports.mapping.pdf')->middleware('auth');
+Route::get('/syllabus/reports/mapping/{mapping}/excel', [SyllabusReportController::class, 'mappingExcel'])->name('syllabus.reports.mapping.excel')->middleware('auth');
+Route::get('/syllabus/reports/coverage/pdf', [SyllabusReportController::class, 'coveragePdf'])->name('syllabus.reports.coverage.pdf')->middleware('auth');
+Route::get('/syllabus/reports/coverage/excel', [SyllabusReportController::class, 'coverageExcel'])->name('syllabus.reports.coverage.excel')->middleware('auth');

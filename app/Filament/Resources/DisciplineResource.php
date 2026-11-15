@@ -10,16 +10,35 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DisciplineResource extends Resource
 {
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return parent::getEloquentQuery()->whereKey(0);
+        }
+
+        return parent::getEloquentQuery()->accessibleTo($user);
+    }
+
     protected static ?string $model = Discipline::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup= 'Academic Management';
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return ($user?->can('discipline.view') || $user?->can('discipline.manage')) ?? false;
+    }
 
     public static function getNavigationBadge(): ?string
     {
@@ -105,11 +124,13 @@ class DisciplineResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('discipline.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('discipline.manage') ?? false),
                 ]),
             ]);
     }

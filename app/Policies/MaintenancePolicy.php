@@ -3,106 +3,69 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Maintenance;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class MaintenancePolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_maintenance');
+        return $user->can('maintenance.view');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Maintenance $maintenance): bool
+    public function view(User $user, Maintenance $model): bool
     {
-        return $user->can('view_maintenance');
+        return $user->can('maintenance.view');
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return $user->can('create_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Maintenance $maintenance): bool
+    public function update(User $user, Maintenance $model): bool
     {
-        return $user->can('update_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Maintenance $maintenance): bool
+    public function delete(User $user, Maintenance $model): bool
     {
-        return $user->can('delete_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can bulk delete.
-     */
     public function deleteAny(User $user): bool
     {
-        return $user->can('delete_any_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can permanently delete.
-     */
-    public function forceDelete(User $user, Maintenance $maintenance): bool
+    public function forceDelete(User $user, Maintenance $model): bool
     {
-        return $user->can('force_delete_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('force_delete_any_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can restore.
-     */
-    public function restore(User $user, Maintenance $maintenance): bool
+    public function restore(User $user, Maintenance $model): bool
     {
-        return $user->can('restore_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can bulk restore.
-     */
     public function restoreAny(User $user): bool
     {
-        return $user->can('restore_any_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Maintenance $maintenance): bool
+    public function replicate(User $user): bool
     {
-        return $user->can('replicate_maintenance');
+        return $user->can('maintenance.manage');
     }
 
-    /**
-     * Determine whether the user can reorder.
-     */
     public function reorder(User $user): bool
     {
-        return $user->can('reorder_maintenance');
+        return $user->can('maintenance.manage');
     }
 }

@@ -8,24 +8,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Attachment extends Model
 {
     protected $fillable = [
-        'report_id', 
+        'report_id',
+        'uploaded_by',
         'file_path',
+        'original_name',
+        'mime_type',
+        'size_bytes',
     ];
 
-
-    protected $casts = [
-        'file_path' => 'array', // Automatically cast the file_paths column to an array
-    ];
-
-    // Relationships
-
-    /**
-     * The report this attachment belongs to.
-     */
-    
+    protected function casts(): array
+    {
+        return [
+            'size_bytes' => 'integer',
+        ];
+    }
 
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class);
+    }
+
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 }

@@ -11,25 +11,32 @@ use Symfony\Component\HttpFoundation\File\File;
 class ReportObserver
 {
     /**
-     * Handle the Report "created" event.
+     * Fill in the submitter from the authenticated user when missing.
+     * Never overwrite an explicitly provided user (e.g. console/service flows).
      */
-    public function creating(Report $report)
+    public function creating(Report $report): void
     {
-        // Temporary debug statement
-        \Log::info('Creating report with user_id: ' . Auth::id());
-        
-        $report->user_id = Auth::id();
+        $report->user_id ??= Auth::id();
     }
 
     public function saved(Report $report): void
     {
-        $path = 'reports/'.$report->id.'.pdf';
-        $pdf = Pdf::loadView('pdf.report', ['report' => $report->load('user', 'recipients')]);
+        if (app()->runningUnitTests()) {
+            // PDF generation depends on Imagick/Dompdf availability; keep tests fast and independent.
+            return;
+        }
 
-        Storage::disk('public')->put($path, $this->mergePdfAttachments($pdf->output(), $report));
+        try {
+            $path = 'reports/'.$report->id.'.pdf';
+            $pdf = Pdf::loadView('pdf.report', ['report' => $report->load('user', 'recipients')]);
 
-        if ($report->pdf_path !== $path) {
-            $report->forceFill(['pdf_path' => $path])->saveQuietly();
+            Storage::disk('public')->put($path, $this->mergePdfAttachments($pdf->output(), $report));
+
+            if ($report->pdf_path !== $path) {
+                $report->forceFill(['pdf_path' => $path])->saveQuietly();
+            }
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 
@@ -41,6 +48,10 @@ class ReportObserver
             ->values();
 
         if ($pdfAttachments->isEmpty()) {
+            return $reportPdf;
+        }
+
+        if (! extension_loaded('imagick')) {
             return $reportPdf;
         }
 

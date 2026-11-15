@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('syllabus_coordinator_reviews', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('syllabus_strand_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('coordinator_id')->constrained('users')->cascadeOnDelete();
+            $table->text('comment');
+            $table->timestamp('reviewed_at')->useCurrent();
+            $table->timestamps();
+            $table->index(['syllabus_strand_id', 'coordinator_id', 'reviewed_at'], 'syllabus_reviews_lookup');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('syllabus_coordinator_reviews');
+    }
+};

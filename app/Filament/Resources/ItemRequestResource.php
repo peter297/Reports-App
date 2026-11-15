@@ -14,13 +14,28 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 class ItemRequestResource extends Resource
 {
+    public static function getEloquentQuery(): Builder
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return parent::getEloquentQuery()->whereKey(0);
+        }
+
+        return parent::getEloquentQuery()->accessibleTo($user);
+    }
     protected static ?string $model = ItemRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $navigationGroup = 'Admins Area';
+
+    protected static ?int $navigationSort = 6;
 
     public static function form(Form $form): Form
     {
@@ -30,12 +45,6 @@ class ItemRequestResource extends Resource
             Section::make('Request Details')
                 ->schema([
                     Grid::make(2)->schema([
-                        Select::make('department_id')
-                            ->relationship(name: 'department', titleAttribute: 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-
                         Select::make('year_session_id')
                             ->relationship(name: 'year_session', titleAttribute: 'name')
                             ->searchable()
@@ -118,7 +127,6 @@ class ItemRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            Tables\Columns\TextColumn::make('department.name')->label('Department')->sortable(),
             Tables\Columns\TextColumn::make('year_session.name')->label('Session')->sortable(),
             Tables\Columns\TextColumn::make('term.name')->label('Term')->sortable(),
             Tables\Columns\TextColumn::make('week.name')->label('Week')->sortable(),
@@ -138,10 +146,12 @@ class ItemRequestResource extends Resource
             Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
         ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('item_requests.manage') ?? false),
             ])
             ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('item_requests.manage') ?? false),
             ]);
     }
 

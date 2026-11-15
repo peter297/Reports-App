@@ -16,7 +16,7 @@ class MaintenanceResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        return auth()->user()?->can('maintenance.view') ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -37,9 +37,6 @@ class MaintenanceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('department_id')
-                    ->required()
-                    ->numeric(),
                 Forms\Components\TextInput::make('year_session_id')
                     ->required()
                     ->numeric(),
@@ -68,9 +65,6 @@ class MaintenanceResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('department_id')
-                    ->numeric()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('year_session_id')
                     ->numeric()
                     ->sortable(),
@@ -102,11 +96,13 @@ class MaintenanceResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('maintenance.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('maintenance.manage') ?? false),
                 ]),
             ]);
     }

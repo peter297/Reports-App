@@ -327,7 +327,7 @@ class AttendanceReportController extends Controller
     private function queryAttendances()
     {
         $user = auth()->user();
-        abort_unless($user?->hasUnrestrictedAccess() || $user?->hasRole('Coordinators'), 403);
+        abort_unless($user?->can('attendance.view'), 403);
 
         return Attendance::query()
             ->accessibleTo($user)

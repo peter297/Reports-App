@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -18,7 +17,7 @@ return new class extends Migration
         });
 
         // Optionally, update existing rows with a valid date
-        \DB::statement("UPDATE events SET event_date = CURDATE() WHERE event_date IS NULL");
+        \DB::statement('UPDATE events SET event_date = CURRENT_DATE WHERE event_date IS NULL');
 
         Schema::table('events', function (Blueprint $table) {
             // Then, make it NOT NULL after updating existing records

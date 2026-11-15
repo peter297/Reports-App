@@ -19,7 +19,7 @@ class CoCurricularResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasUnrestrictedAccess() ?? false;
+        return auth()->user()?->hasSystemAccess() ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -94,11 +94,13 @@ class CoCurricularResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('co_curriculars.manage') ?? false),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn (): bool => auth()->user()?->can('co_curriculars.manage') ?? false),
                 ]),
             ]);
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,7 +12,6 @@ class ItemRequest extends Model
     use HasFactory;
 
     protected $fillable = [
-        'department_id',
         'year_session_id',
         'term_id',
         'week_id',
@@ -24,11 +24,6 @@ class ItemRequest extends Model
     protected $casts = [
         'items' => 'array',
     ];
-
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
-    }
 
     public function year_session(): BelongsTo
     {
@@ -43,6 +38,15 @@ class ItemRequest extends Model
     public function week(): BelongsTo
     {
         return $this->belongsTo(Week::class);
+    }
+
+    public function scopeAccessibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->can('item_requests.manage')) {
+            return $query;
+        }
+
+        return $query->where('user_id', $user->id);
     }
 
     public function user()
