@@ -31,7 +31,11 @@ class YearSessionResource extends Resource
 
     public static function canViewAny(): bool
     {
+<<<<<<< HEAD
         return Auth::user()?->can('sessions.view') ?? false;
+=======
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
+>>>>>>> 986d183417c1db2946d5d09abadc57976e55e4ad
     }
 
     public static function form(Form $form): Form

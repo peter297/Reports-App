@@ -31,7 +31,10 @@
                                 {{ $template->name }}
                             </h3>
                             <p class="text-xs text-gray-500 dark:text-gray-400">
-                                {{ strtoupper($template->extension) }} • {{ $template->formatted_size }}
+                                {{ strtoupper($template->category ?? 'Report Template') }}
+                                @if ($template->file_type)
+                                    • {{ strtoupper($template->extension) }} • {{ $template->formatted_size }}
+                                @endif
                             </p>
                         </div>
                     </div>
@@ -49,7 +52,7 @@
                             {{ $template->created_at->diffForHumans() }}
                         </span>
                         <div class="flex items-center gap-2">
-                            @if ($this->isSuperAdmin())
+                            @can('delete', $template)
                                 <button
                                     wire:click="deleteTemplate({{ $template->id }})"
                                     wire:confirm="Are you sure you want to delete this template?"
@@ -58,14 +61,25 @@
                                     <x-heroicon-o-trash class="h-3.5 w-3.5" />
                                     Delete
                                 </button>
+                            @endcan
+                            @if ($template->link_url)
+                                <a
+                                    href="{{ $template->link_url }}"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400"
+                                >
+                                    <x-heroicon-o-arrow-top-right-on-square class="h-3.5 w-3.5" />
+                                    Open Tracker
+                                </a>
+                            @elseif ($template->file_path)
+                                <a
+                                    href="{{ $template->download_url }}"
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400"
+                                >
+                                    <x-heroicon-o-arrow-down-tray class="h-3.5 w-3.5" />
+                                    Download
+                                </a>
                             @endif
-                            <a
-                                href="{{ $template->download_url }}"
-                                class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400"
-                            >
-                                <x-heroicon-o-arrow-down-tray class="h-3.5 w-3.5" />
-                                Download
-                            </a>
                         </div>
                     </div>
                 </div>

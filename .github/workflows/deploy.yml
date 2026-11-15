@@ -18,7 +18,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2' # Laravel 11 requires PHP 8.2+
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, bcmath, zip, gd
+          extensions: mbstring, xml, dom, fileinfo, openssl, ctype, iconv, intl, pdo, pdo_mysql, bcmath, zip, gd, imagick
           tools: composer:v2
 
       - name: 3. Setup Node.js
@@ -39,9 +39,14 @@ jobs:
         run: |
           php artisan filament:assets --ansi
 
+      - name: 6b. Cache Routes & Views (env-safe; config cache is built on the server, never here)
+        run: |
+          php artisan route:cache --ansi
+          php artisan view:cache --ansi
+
       - name: 7. Prepare Directory Keeps
         run: |
-          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/fonts
           touch storage/framework/cache/data/.gitkeep
           touch storage/framework/sessions/.gitkeep
           touch storage/framework/views/.gitkeep
@@ -54,8 +59,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
+          timeout: 600000
           protocol: ftp
-          local-dir: ./
           exclude: |
             **/.git*
             **/.git/**

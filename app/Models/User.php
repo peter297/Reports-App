@@ -144,6 +144,7 @@ class User extends Authenticatable implements FilamentUser
         ]);
     }
 
+<<<<<<< HEAD
     /**
      * System configuration access (roles, settings, structure, templates).
      */
@@ -387,6 +388,20 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return true;
+=======
+    public const DEPUTY_ROLES = ['Deputy HeadTeacher', 'Deputy Principal'];
+
+    public const HEAD_ROLES = ['HeadTeacher', 'Principal', 'CEO'];
+
+    public function isDeputy(): bool
+    {
+        return $this->hasAnyRole(self::DEPUTY_ROLES);
+    }
+
+    public function isHead(): bool
+    {
+        return $this->hasAnyRole(self::HEAD_ROLES);
+>>>>>>> 986d183417c1db2946d5d09abadc57976e55e4ad
     }
 
     protected static function booted(): void

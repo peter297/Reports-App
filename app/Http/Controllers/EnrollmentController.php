@@ -43,7 +43,10 @@ class EnrollmentController extends Controller
                 return $enrollment;
             });
 
-        return Pdf::loadView('pdf.enrollments', compact('enrollments'))
+        return Pdf::loadView('pdf.enrollments', [
+            'enrollments' => $enrollments,
+            'sectionTotals' => Enrollment::sectionTotals($enrollments),
+        ])
             ->setPaper('a4', 'landscape')
             ->stream('enrollment-report.pdf');
     }
@@ -59,8 +62,9 @@ class EnrollmentController extends Controller
             ->latest()
             ->get();
         $classNames = Classes::query()->pluck('name', 'id');
+        $sectionTotals = Enrollment::sectionTotals($enrollments);
 
-        return response()->streamDownload(function () use ($enrollments, $classNames): void {
+        return response()->streamDownload(function () use ($enrollments, $classNames, $sectionTotals): void {
             $writer = new XlsxWriter;
             $writer->openToBrowser('enrollment-report.xlsx');
 
@@ -290,6 +294,33 @@ class EnrollmentController extends Controller
                         ],
                     ));
                 }
+            }
+
+            // --- Section Subtotal Rows ---
+            foreach ($sectionTotals['sections'] as $sectionName => $figures) {
+                $writer->addRow(Row::fromValuesWithStyles(
+                    [
+                        '',
+                        '',
+                        '',
+                        '',
+                        $sectionName.' Subtotal',
+                        $figures['boys'],
+                        $figures['girls'],
+                        $figures['total'],
+                        $figures['admitted'],
+                        $figures['left'],
+                        '',
+                    ],
+                    $totalLabelStyle,
+                    [
+                        5 => $totalStyle,
+                        6 => $totalStyle,
+                        7 => $totalStyle,
+                        8 => $totalSuccessStyle,
+                        9 => $totalDangerStyle,
+                    ],
+                ));
             }
 
             // --- Grand Total Row ---

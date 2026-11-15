@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AcademicAnalysisReportController;
 use App\Http\Controllers\AttendanceReportController;
+use App\Http\Controllers\ClassSizeReportController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\ReportController;
@@ -42,7 +44,19 @@ Route::get('/attendances/range/pdf', [AttendanceReportController::class, 'pdfByD
 Route::get('/attendances/range/excel', [AttendanceReportController::class, 'excelByDate'])->name('attendances.report.range.excel')->middleware('auth');
 Route::get('/attendances/selected/pdf', [AttendanceReportController::class, 'pdfByIds'])->name('attendances.report.selected.pdf')->middleware('auth');
 Route::get('/attendances/selected/excel', [AttendanceReportController::class, 'excelByIds'])->name('attendances.report.selected.excel')->middleware('auth');
+<<<<<<< HEAD
 Route::get('/syllabus/reports/mapping/{mapping}/pdf', [SyllabusReportController::class, 'mappingPdf'])->name('syllabus.reports.mapping.pdf')->middleware('auth');
 Route::get('/syllabus/reports/mapping/{mapping}/excel', [SyllabusReportController::class, 'mappingExcel'])->name('syllabus.reports.mapping.excel')->middleware('auth');
 Route::get('/syllabus/reports/coverage/pdf', [SyllabusReportController::class, 'coveragePdf'])->name('syllabus.reports.coverage.pdf')->middleware('auth');
 Route::get('/syllabus/reports/coverage/excel', [SyllabusReportController::class, 'coverageExcel'])->name('syllabus.reports.coverage.excel')->middleware('auth');
+=======
+Route::get('/report-templates/{reportTemplate}/download', [ReportTemplateController::class, 'download'])->name('report-templates.download')->middleware('auth');
+Route::get('/class-sizes/{yearSession}/{term}/pdf', [ClassSizeReportController::class, 'pdf'])->name('class-sizes.report.pdf')->middleware('auth');
+Route::get('/academic-analysis/{analysis}/pdf', [AcademicAnalysisReportController::class, 'pdf'])->name('academic-analysis.pdf')->middleware('auth');
+Route::get('/academic-analysis/{analysis}/excel', [AcademicAnalysisReportController::class, 'excel'])->name('academic-analysis.excel')->middleware('auth');
+Route::get('/academic-analysis/section/{yearSession}/{term}/{exam}/{branch}/{section}/pdf', [AcademicAnalysisReportController::class, 'sectionPdf'])->name('academic-analysis.section.pdf')->middleware('auth');
+Route::get('/academic-analysis/section/{yearSession}/{term}/{exam}/{branch}/{section}/excel', [AcademicAnalysisReportController::class, 'sectionExcel'])->name('academic-analysis.section.excel')->middleware('auth');
+Route::get('/academic-analysis/year/{yearSession}/{branch}/{section}/pdf', [AcademicAnalysisReportController::class, 'yearPdf'])->name('academic-analysis.year.pdf')->middleware('auth');
+Route::get('/academic-analysis/year/{yearSession}/{branch}/{section}/excel', [AcademicAnalysisReportController::class, 'yearExcel'])->name('academic-analysis.year.excel')->middleware('auth');
+Route::get('/academic-analysis/schools/{yearSession}/pdf', [AcademicAnalysisReportController::class, 'schoolsPdf'])->name('academic-analysis.schools.pdf')->middleware('auth');
+>>>>>>> 986d183417c1db2946d5d09abadc57976e55e4ad

@@ -35,7 +35,7 @@ class EnrollmentResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getEloquentQuery()->count();
+        return \App\Helpers\Utils::navigationBadge(static::class.':'.auth()->id(), fn (): int => static::getEloquentQuery()->count());
     }
 
     public static function form(Form $form): Form
@@ -79,7 +79,30 @@ class EnrollmentResource extends Resource
                             ->label('Class')
                             ->options(fn (): array => Classes::query()->orderBy('name')->pluck('name', 'id')->all())
                             ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state): void {
+                                $set('section', \App\Models\Enrollment::resolveSection(null, $state ? (int) $state : null));
+                            })
                             ->required(),
+                        Forms\Components\Select::make('section')
+                            ->label('Section')
+                            ->options(function (Forms\Get $get): array {
+                                $sections = \App\Models\Enrollment::sectionsForClass(
+                                    $get('class_id') ? (int) $get('class_id') : null
+                                );
+
+                                $options = array_combine($sections, $sections);
+
+                                return $options + [
+                                    'EYE' => 'EYE - Early Years Education',
+                                    'Upper Primary' => 'Upper Primary',
+                                    'Junior School' => 'Junior School',
+                                ];
+                            })
+                            ->searchable()
+                            ->default(function (Forms\Get $get): ?string {
+                                return \App\Models\Enrollment::resolveSection(null, $get('class_id') ? (int) $get('class_id') : null);
+                            }),
                         Forms\Components\TextInput::make('boys')
                             ->numeric()
                             ->minValue(0)
@@ -198,7 +221,9 @@ class EnrollmentResource extends Resource
             return parent::getEloquentQuery()->whereKey(0);
         }
 
-        return parent::getEloquentQuery()->accessibleTo($user);
+        return parent::getEloquentQuery()
+            ->with(['yearSession', 'term'])
+            ->accessibleTo($user);
     }
 
     public static function getRelations(): array

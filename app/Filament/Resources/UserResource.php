@@ -34,7 +34,7 @@ class UserResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return \App\Helpers\Utils::navigationBadge(static::class, fn (): int => static::getModel()::count());
     }
 
     /**
@@ -175,6 +175,11 @@ class UserResource extends Resource
                         ->tooltip('One or more selected users cannot be deleted (yourself, a super admin, or someone with reports or lesson progress). Deactivate their accounts instead.'),
                 ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['lineManager']);
     }
 
     public static function getRelations(): array
